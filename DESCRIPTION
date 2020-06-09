@@ -1,7 +1,7 @@
 Package: shinybrms
 Title: Graphical User Interface (Shiny App) for Package 'brms'
-Version: 1.0.1
-Date: 2020-03-22
+Version: 1.1.0
+Date: 2020-06-09
 Authors@R: 
     person(given = "Frank",
            family = "Weber",
@@ -20,10 +20,10 @@ LazyData: true
 RoxygenNote: 7.1.0
 Depends: R (>= 3.5.0)
 Imports: shiny (>= 1.4.0), brms (>= 2.12.0)
-Suggests: shinystan (>= 2.4.0), callr (>= 3.4.0), rstanarm, lasso2
+Suggests: shinystan (>= 2.4.0), callr (>= 3.4.0), rstanarm, MASS, lme4
 NeedsCompilation: no
-Packaged: 2020-03-25 16:53:16 UTC; Frank
+Packaged: 2020-06-09 18:44:33 UTC; Frank
 Author: Frank Weber [aut, cre]
 Maintainer: Frank Weber <fweber144@protonmail.com>
 Repository: CRAN
-Date/Publication: 2020-03-26 10:00:03 UTC
+Date/Publication: 2020-06-09 19:20:02 UTC
