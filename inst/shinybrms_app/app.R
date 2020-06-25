@@ -64,27 +64,27 @@ ui <- navbarPage(
                              ".csv",
                              ".txt",
                              ".dat")),
-        strong("Header"),
+        strong("Header:"),
         checkboxInput("header", "The file has a header containing the column names", TRUE),
-        radioButtons("sep", "Separator",
+        radioButtons("sep", "Separator symbol:",
                      choices = c("Comma" = ",",
                                  "Semicolon" = ";",
                                  "Tab" = "\t",
                                  "Whitespace" = "")),
-        radioButtons("quote", "Quote",
+        radioButtons("quote", "Quote symbol:",
                      choices = c("None" = "",
                                  "Double quote" = '"',
                                  "Single quote" = "'"),
                      selected = '"'),
-        radioButtons("dec", "Decimal",
+        radioButtons("dec", "Decimal symbol:",
                      choices = c("Point" = ".",
                                  "Comma" = ",")),
         hr(),
         h4("Preview"),
-        radioButtons("preview_type_radio", "Type of preview",
+        radioButtons("preview_type_radio", "Type of preview:",
                      choices = c("Dataset" = "datas",
                                  "Structure" = "struc")),
-        radioButtons("preview_rows_radio", "Rows to show (only for preview type \"Dataset\")",
+        radioButtons("preview_rows_radio", "Rows to show (only for preview type \"Dataset\"):",
                      choices = c("Head (only the first 6 rows)" = "head",
                                  "All rows" = "all"))
         
@@ -162,12 +162,12 @@ ui <- navbarPage(
           h3("Main effects"),
           helpText("Note:",
                    tags$ul(
-                     tags$li("Non-varying effects are also known as population-level or \"fixed\" effects."),
+                     tags$li("Nonvarying effects are also known as population-level or \"fixed\" effects."),
                      tags$li("Varying effects are also known as group-level or \"random\" effects."),
                    ),
                    "The terms \"fixed\" and \"random\" effects are put in quotation marks as they",
                    "are not really appropriate for a Bayesian regression model."),
-          h4("Non-varying main effects"),
+          h4("Nonvarying main effects"),
           helpText("Start typing or click into the field below to choose variables for which",
                    "nonvarying main effects shall be added."),
           selectInput("pred_mainNV_sel", NULL,
@@ -278,7 +278,7 @@ ui <- navbarPage(
         selectInput("prior_class_sel",
                     HTML(paste0(
                       "Parameter class:",
-                      helpText("Note: The parameter class may consist of a single parameter.", 
+                      helpText("Note: The parameter class may consist of a single parameter.",
                                style = "font-weight:normal")
                     )),
                     choices = c("Choose parameter class ..." = ""),
@@ -287,7 +287,7 @@ ui <- navbarPage(
                     HTML(paste0(
                       "Coefficient:",
                       helpText("Note: Leave empty to use all coefficients belonging to the",
-                               "selected parameter class.", 
+                               "selected parameter class.",
                                style = "font-weight:normal")
                     )),
                     choices = c("Choose coefficient or leave empty" = ""),
@@ -312,18 +312,18 @@ ui <- navbarPage(
                       HTML(paste0(
                         "Note: You may ", em("either"),
                         tags$ul(
-                          tags$li(HTML(paste0("specify a prior distribution using a Stan function ", 
+                          tags$li(HTML(paste0("specify a prior distribution using a Stan function ",
                                               em("or")))),
                           tags$li(HTML(paste0("specify a prior distribution using one of the ",
-                                              "special functions defined by ", strong("brms"), 
-                                              " for this purpose (e.g. ", 
-                                              code("horseshoe"), " and ", code("lkj"), 
+                                              "special functions defined by ", strong("brms"),
+                                              " for this purpose (e.g. ",
+                                              code("horseshoe"), " and ", code("lkj"),
                                               ") ", em("or")))),
                           tags$li("leave this field empty to use a flat prior.")
                         ),
                         "If you specify a prior distribution using a Stan function, you have to ",
                         "use the Stan function which would be used in a Stan sampling statement ",
-                        "and specify values for all arguments of this Stan function (e.g. ", 
+                        "and specify values for all arguments of this Stan function (e.g. ",
                         code("normal(0, 2.5)"), "). "
                       )),
                       style = "font-weight:normal"
@@ -448,19 +448,26 @@ ui <- navbarPage(
                  radioButtons("advOpts_inits", "Initial values:",
                               choices = list("Random" = "random", "Zero" = "0"),
                               inline = TRUE),
-                 numericInput("advOpts_init_r", "\"init_r\" (only relevant for random initial values):",
+                 numericInput("advOpts_init_r",
+                              HTML(paste0("Range of random initial values in the unconstrained parameter space (",
+                                          code("\"init_r\""),
+                                          "; only relevant if random initial values are chosen):")),
                               value = 2, step = 0.1, min = 0),
-                 numericInput("advOpts_adapt_delta", "\"adapt_delta\":",
+                 numericInput("advOpts_adapt_delta",
+                              HTML(paste0("Target Metropolis acceptance rate (", code("\"adapt_delta\""), "):")),
                               value = 0.95, step = 0.01, min = 0, max = 1),
-                 numericInput("advOpts_max_treedepth", "\"max_treedepth\":",
+                 numericInput("advOpts_max_treedepth",
+                              HTML(paste0("Maximum tree depth (", code("\"max_treedepth\""), "):")),
                               value = 15L, step = 1L, min = 1L),
-                 checkboxInput("advOpts_open_progress", "Open progress",
+                 checkboxInput("advOpts_open_progress", strong("Open progress"),
                                value = TRUE),
-                 numericInput("advOpts_refresh", "Progress-refreshing step size:",
+                 numericInput("advOpts_refresh",
+                              HTML(paste0("Progress-refreshing step size (", code("\"refresh\""), "):")),
                               value = NA, step = 1L, min = 0L),
-                 checkboxInput("advOpts_save_all_pars", "\"save_all_pars\"",
+                 checkboxInput("advOpts_save_all_pars",
+                               strong("Save draws from", em("all"), "parameters, including internal ones (", code("\"save_all_pars\"", .noWS = "outside"), ")"),
                                value = FALSE),
-                 checkboxInput("advOpts_save_warmup", "Save warmup",
+                 checkboxInput("advOpts_save_warmup", strong("Save warmup"),
                                value = TRUE))
         )
       )
@@ -471,15 +478,28 @@ ui <- navbarPage(
                "Windows users having Firefox set as their default web browser may need to manually",
                "copy the link to the Stan HTML progress file which is automatically opening up and",
                "paste this link into a different web browser for viewing the progress file there."),
-      actionButton("run_stan", "Run Stan (may take a while)")
+      actionButton("run_stan", "Run Stan (may take a while)", class = "btn-primary")
     ),
     wellPanel(
       h3("Output"),
       strong("Date and time when Stan run was finished:"),
       textOutput("fit_date"),
       br(),
-      strong("Summary:"),
+      # br(),
+      h4("Hamiltonian Monte Carlo (HMC) diagnostics"),
+      strong("Divergences:"),
+      verbatimTextOutput("diagn_div", placeholder = TRUE),
+      strong("Tree depth:"),
+      verbatimTextOutput("diagn_tree", placeholder = TRUE),
+      strong("Bayesian fraction of missing information for the energy transitions (E-BFMI):"),
+      verbatimTextOutput("diagn_energy", placeholder = TRUE),
+      br(),
+      # br(),
+      h4("Summary"),
       verbatimTextOutput("smmry_view", placeholder = TRUE),
+      br(),
+      # br(),
+      h4("Download"),
       selectInput("stanout_download_sel", "Choose output file to download:",
                   choices = c("\"brmsfit\" object (RDS file)" = "brmsfit_obj",
                               "Matrix of posterior draws (CSV file)" = "draws_mat_csv",
@@ -497,7 +517,7 @@ ui <- navbarPage(
         "Notes:",
         tags$ul(
           tags$li(
-            "In the", strong("shinystan"), "app, the parameter names given by", strong("brms"), 
+            "In the", strong("shinystan"), "app, the parameter names given by", strong("brms"),
             "are used. These are as follows:",
             tags$ul(
               tags$li("\"b_Intercept\" is the intercept (with respect to the noncentered predictors)."),
@@ -516,8 +536,8 @@ ui <- navbarPage(
           tags$li(
             HTML(paste0(
               "The R objects needed for the posterior predictive checks in ", strong("shinystan"),
-              " are automatically created. These are the observations for the outcome (object ", 
-              code("y"), ") and the corresponding posterior predictive replications (object ", 
+              " are automatically created. These are the observations for the outcome (object ",
+              code("y"), ") and the corresponding posterior predictive replications (object ",
               code("y_rep"), "). You can select them in the respective \"Object from global ",
               "environment\" input selector under \"DIAGNOSE\" &rarr; \"PPcheck\" &rarr; ",
               "\"Select data\" in the ", strong("shinystan"), " app."
@@ -536,7 +556,7 @@ ui <- navbarPage(
     "More",
     tabPanel(
       "About",
-      titlePanel("About \"shinybrms\""),
+      titlePanel(HTML(paste("About", strong("shinybrms")))),
       br(),
       wellPanel(
         h3("Basic information"),
@@ -546,7 +566,10 @@ ui <- navbarPage(
           a("R", href = "https://www.R-project.org/", target = "_blank"),
           " package which is available on ",
           a("GitHub", href = "https://github.com/fweber144/shinybrms", target = "_blank"), " and ",
-          a("CRAN", href = "https://CRAN.R-project.org/package=shinybrms", target = "_blank"), "."
+          a("CRAN", href = "https://CRAN.R-project.org/package=shinybrms", target = "_blank"),
+          " (see also the ",
+          a("website", href = "https://fweber144.github.io/shinybrms/", target = "_blank"),
+          " for the ", strong("shinybrms"), " package)."
         ))),
         tags$ul(
           tags$li(HTML(paste0(
@@ -563,20 +586,33 @@ ui <- navbarPage(
               target = "_blank"),
             "). The GUI is a ",
             a("Shiny", href = "https://shiny.rstudio.com/", target = "_blank"),
-            " app, i.e. created using the R package ",
+            " app, i.e. it was created using the R package ",
             a(HTML("<strong>shiny</strong>"),
               href = "https://CRAN.R-project.org/package=shiny",
               target = "_blank"),
             "."
           ))),
           tags$li(strong("Author:"),
-                  "Frank Weber"),
+                  "Frank Weber (",
+                  a("ORCID iD: 0000-0002-4842-7922",
+                    href = "https://orcid.org/0000-0002-4842-7922",
+                    target = "_blank",
+                    .noWS = "outside"),
+                  ")"),
           tags$li(strong("Version:"),
-                  "1.1.0"),
+                  "1.2.1"),
           tags$li(strong("Date (yyyy-mm-dd):"),
-                  "2020-06-09"),
+                  "2020-06-25"),
           tags$li(strong("License:"),
-                  "GPL-3")
+                  a("GPL-3", href = "https://CRAN.R-project.org/web/licenses/GPL-3", target = "_blank")),
+          tags$li(strong("Citation:"),
+                  "Frank Weber (2020).",
+                  em("shinybrms: Graphical User Interface (Shiny App)",
+                     "for Package 'brms'."),
+                  "R package, version 1.2.1. URL:",
+                  a("https://fweber144.github.io/shinybrms/",
+                    href = "https://fweber144.github.io/shinybrms/",
+                    target = "_blank"))
         )
       ),
       wellPanel(
@@ -610,7 +646,8 @@ ui <- navbarPage(
           tags$li(HTML(paste0(
             strong("shinybrms"), ": ",
             a("GitHub", href = "https://github.com/fweber144/shinybrms", target = "_blank"), ", ",
-            a("CRAN", href = "https://CRAN.R-project.org/package=shinybrms", target = "_blank")
+            a("CRAN", href = "https://CRAN.R-project.org/package=shinybrms", target = "_blank"), ", ",
+            a("website", href = "https://fweber144.github.io/shinybrms/", target = "_blank")
           ))),
           tags$li(HTML(paste0(
             strong("brms"), ": ",
@@ -1160,7 +1197,7 @@ server <- function(input, output, session){
         )
       } else{
         showNotification(
-          paste(warn_capt, collapse = "|"),
+          paste(warn_capt, collapse = " | "),
           duration = NA,
           type = "warning"
         )
@@ -1287,7 +1324,7 @@ server <- function(input, output, session){
         )
       } else{
         showNotification(
-          paste(warn_capt, collapse = "|"),
+          paste(warn_capt, collapse = " | "),
           duration = NA,
           type = "warning"
         )
@@ -1331,7 +1368,7 @@ server <- function(input, output, session){
         )
       } else{
         showNotification(
-          paste(warn_capt, collapse = "|"),
+          paste(warn_capt, collapse = " | "),
           duration = NA,
           type = "warning"
         )
@@ -1395,7 +1432,6 @@ server <- function(input, output, session){
       args_brm <- c(args_brm,
                     list(refresh = input$advOpts_refresh))
     }
-    args_brm <- args_brm
     
     showNotification(
       paste("Stan is about to start sampling. Note that the C++ code needs to be compiled first",
@@ -1416,7 +1452,7 @@ server <- function(input, output, session){
       prog_browser <- getOption("shinybrms.prog_browser",
                                 getOption("browser"))
       if(is.function(prog_browser) &&
-         any(grepl("rs_browseURL", as.character(body(prog_browser))))){
+         any(grepl("rs_browseURL|rs_shinyviewer", as.character(body(prog_browser))))){
         # In this case, "prog_browser" cannot be used (at least not without requiring the user to
         # perform some major modifications to the initialization of the R session), so use the
         # default browser stored in the environment variable "R_BROWSER":
@@ -1441,7 +1477,7 @@ server <- function(input, output, session){
           rstan:::create_progress_html_file(tmp_stdout_html, tmp_stdout_txt)
           browseURL(paste0("file://", tmp_stdout_html))
         } else if(isatty(stdout())){
-          sink(tempfile(pattern = "shinybrms_dummy_stdout", fileext = ".txt"))
+          sink(tempfile(pattern = "shinybrms_dummy_stdout_", fileext = ".txt"))
           sink_active <- TRUE
         }
       }
@@ -1473,7 +1509,7 @@ server <- function(input, output, session){
         )
       } else{
         showNotification(
-          paste(warn_capt, collapse = "|"),
+          paste(warn_capt, collapse = " | "),
           duration = NA,
           type = "warning"
         )
@@ -1489,6 +1525,27 @@ server <- function(input, output, session){
     invisible(req(C_fit()))
     C_fit()$fit@date
   })
+  
+  output$diagn_div <- renderText({
+    invisible(req(C_fit()))
+    capture.output({
+      rstan::check_divergences(C_fit()$fit)
+    }, type = "message")
+  }, sep = "\n")
+  
+  output$diagn_tree <- renderText({
+    invisible(req(C_fit()))
+    capture.output({
+      rstan::check_treedepth(C_fit()$fit)
+    }, type = "message")
+  }, sep = "\n")
+  
+  output$diagn_energy <- renderText({
+    invisible(req(C_fit()))
+    capture.output({
+      rstan::check_energy(C_fit()$fit)
+    }, type = "message")
+  }, sep = "\n")
   
   output$smmry_view <- renderPrint({
     invisible(req(C_fit()))
@@ -1530,7 +1587,7 @@ server <- function(input, output, session){
         shinystan_browser <- getOption("shinybrms.shinystan_browser",
                                        getOption("browser"))
         if(is.function(shinystan_browser) &&
-           any(grepl("rs_browseURL", as.character(body(shinystan_browser))))){
+           any(grepl("rs_browseURL|rs_shinyviewer", as.character(body(shinystan_browser))))){
           # In this case, "shinystan_browser" cannot be used (at least not without requiring the
           # user to perform some major modifications to the initialization of the R session), so use
           # the default browser stored in the environment variable "R_BROWSER":

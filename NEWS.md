@@ -1,21 +1,47 @@
+# shinybrms 1.2.1
 
-<!-- NEWS.md is generated from NEWS.Rmd. Please edit that file -->
+## Minor changes
 
-# News for ‘shinybrms’
+  - Minor improvements in the UI.
+  - Updated information about the **shinybrms** package and app
+    (e.g. added the URL of the 
+    [**shinybrms** website](https://fweber144.github.io/shinybrms/)).
 
-## shinybrms 1.1.0
+## Bug fixes
 
-### Major changes
+  - Fixed a bug causing the sampling progress file not to open up if
+    RStudio's internal `rs_shinyviewer` was used for option `"browser"`.
+
+# shinybrms 1.2.0 (only GitHub)
+
+## Major changes
+
+  - Show Hamiltonian Monte Carlo (HMC) diagnostics in the “Output” panel
+    on page “Posterior”.
+
+## Minor changes
+
+  - Added a package website built with `pkgdown`.
+  - Added a package logo created with `hexSticker`.
+  - Require R \>= 3.6.0.
+
+## Bug fixes
+
+  - Try to fix a NOTE occurring in some CRAN checks.
+
+# shinybrms 1.1.0
+
+## Major changes
 
   - Added the possibility to include varying effects.
 
-### Minor changes
+## Minor changes
 
   - All predictor terms (main effects as well as interactions) are now
     shown in a preview table.
   - It is now possible to remove interaction terms one by one.
   - Restricted the choices for the outcome and the predictor selections
-    (e.g. remove the outcome from the list of possible predictor
+    (e.g. remove the outcome from the list of possible predictor
     variables).
   - Removed some example datasets and added new ones.
   - Automatically create the R objects needed for the posterior
@@ -38,7 +64,7 @@
     options `shinybrms.prog_browser` and `shinybrms.shinystan_browser`.
   - Allowed \*.dat files in the file upload.
 
-### Bug fixes
+## Bug fixes
 
 “Under the hood”, there have been many changes which should make the
 **shinybrms** app more robust. In particular, the following bugs have
@@ -65,9 +91,9 @@ been fixed:
   - Fixed a bug preventing the progress file from opening up on Linux
     (when started interactively from the terminal).
 
-## shinybrms 1.0.1
+# shinybrms 1.0.1
 
-### Bug fixes
+## Bug fixes
 
   - Example datasets:
       - Added packages required for some example datasets to the
@@ -76,7 +102,7 @@ been fixed:
         datasets.
       - Added links to the online example datasets on page “Links”.
 
-## shinybrms 1.0.0 (only GitHub)
+# shinybrms 1.0.0 (only GitHub)
 
 First release. Offers support for Bayesian regression models with a
 Gaussian, Bernoulli, or negative binomial distribution for the
