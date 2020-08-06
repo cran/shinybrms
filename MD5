@@ -1,8 +1,8 @@
-b84cd05c7d47fc1e4922b2fd8549244c *DESCRIPTION
+be453b881cc85918241a0ef8307cc091 *DESCRIPTION
 b3816fed7141e6cc234e39a769984da4 *NAMESPACE
-6c3e36bb3f9f705eb381e12653ae1f4c *NEWS.md
-bda5c755dd5b5a0c228ca01deccb1a3b *R/launch_shinybrms.R
-9ab53e788b119d69e9a303e9b5eccf77 *README.md
-93df744166f575003ccbd57866f536fc *inst/shinybrms_app/app.R
+874d71ff8b3fab69a82c70c1896b1d59 *NEWS.md
+06a279be5ba85a16d82871b704d5a4fa *R/launch_shinybrms.R
+67dba8fd81e76cf13bcfc232caf7118a *README.md
+b2817c1d2344581559c9feb06ea765df *inst/shinybrms_app/app.R
 1583b7256bd7a62b5c328c8268f61e22 *man/figures/logo.svg
-3855dc65d429c46b362ea6dbaed8e0f6 *man/launch_shinybrms.Rd
+3c371f3c27a3b70364b9149a4ecc9cc9 *man/launch_shinybrms.Rd

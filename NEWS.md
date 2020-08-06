@@ -1,3 +1,54 @@
+# shinybrms 1.3.0
+
+## Major changes
+
+  - Use the term "nonpooled effects" instead of "nonvarying effects" and
+    the term "partially pooled effects" instead of "varying effects".
+  - Restructured page "Posterior".
+  - Up to now, some general MCMC diagnostics (R-hat, bulk-ESS, tail-ESS)
+    were only included implicitly (as part of the warnings introduced in
+    version 1.2.2), besides being accessible from within the
+    **shinystan** app. Now, these general MCMC diagnostics are
+    accessible from within the **shinybrms** app and the warnings from
+    version 1.2.2 are handled differently.
+  - Added a page "Home".
+  - Added a page "References" (listed under "More").
+  - Removed page "Help" (which was listed under "More"). Its content is
+    now located at other (more appropriate) places in the **shinybrms**
+    app.
+  - Added a description how to include an offset. For this, the required
+    version of **brms** had to be increased to 2.13.3.
+
+## Minor changes
+
+  - Minor improvements in the UI (e.g. improved and added help texts and
+    notifications, but also added hyperlinks to the online documentation
+    of R functions).
+  - Added the possibility to download the MCMC diagnostics (including
+    the newly added general MCMC diagnostics).
+  - Minor improvements in the README file.
+  - Minor improvements on pages "About" and "Links" (both listed under
+    "More").
+  - Added example dataset `roaches` from package **rstanarm**.
+
+## Bug fixes
+
+  - Fixed a bug when switching the dataset.
+
+# shinybrms 1.2.2 (only GitHub)
+
+## Minor changes
+
+  - Minor improvements in the UI.
+  - Show more warnings from the Stan run. Some of these additional 
+    warnings overlap with the HMC diagnostics added in v1.2.0, but
+    rather show too many warnings (even if they are partly duplicated)
+    than too few.
+
+## Bug fixes
+
+  - Fixed a NOTE occurring in some CRAN checks.
+
 # shinybrms 1.2.1
 
 ## Minor changes
@@ -16,8 +67,8 @@
 
 ## Major changes
 
-  - Show Hamiltonian Monte Carlo (HMC) diagnostics in the “Output” panel
-    on page “Posterior”.
+  - Show Hamiltonian Monte Carlo (HMC) diagnostics in the "Output" panel
+    on page "Posterior".
 
 ## Minor changes
 
@@ -27,7 +78,7 @@
 
 ## Bug fixes
 
-  - Try to fix a NOTE occurring in some CRAN checks.
+  - Fixed a NOTE occurring in some CRAN checks.
 
 # shinybrms 1.1.0
 
@@ -48,7 +99,7 @@
     predictive checks in **shinystan**.
   - Added the possibility to download the matrix of posterior draws as a
     CSV file.
-  - For the “Advanced options” (for **brms** and Stan): Use explicit
+  - For the "Advanced options" (for **brms** and Stan): Use explicit
     default values and show them to the user. Set `adapt_delta` per
     default to 0.95 as done in package **rstanarm**. Set `max_treedepth`
     per default to 15 as done for most models in **rstanarm**.
@@ -66,7 +117,7 @@
 
 ## Bug fixes
 
-“Under the hood”, there have been many changes which should make the
+"Under the hood", there have been many changes which should make the
 **shinybrms** app more robust. In particular, the following bugs have
 been fixed:
 
@@ -97,18 +148,18 @@ been fixed:
 
   - Example datasets:
       - Added packages required for some example datasets to the
-        “Suggests” list.
+        "Suggests" list.
       - Check for availability of packages required for some example
         datasets.
-      - Added links to the online example datasets on page “Links”.
+      - Added links to the online example datasets on page "Links".
 
 # shinybrms 1.0.0 (only GitHub)
 
 First release. Offers support for Bayesian regression models with a
 Gaussian, Bernoulli, or negative binomial distribution for the
 (univariate) outcome. For the predictors, only nonvarying (a.k.a.
-population-level or “fixed”) effects are supported. Varying (a.k.a.
-group-level or “random”) effects are not supported yet. Neither
+population-level or "fixed") effects are supported. Varying (a.k.a.
+group-level or "random") effects are not supported yet. Neither
 supported are most of
 [**brms**](https://CRAN.R-project.org/package=brms)’s other features,
 like monotonic effects for ordinal predictors or non-linear effects.

@@ -1,3 +1,19 @@
+# shinybrms: Graphical User Interface ('Shiny' App) for Package 'brms'
+# Copyright (C) 2020  Frank Weber
+#   
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 library(shiny)
 
 ####################################################################################################
@@ -23,6 +39,86 @@ san_prior_tab_nms <- function(x){
 ui <- navbarPage(
   "shinybrms", id = "navbar_ID",
   tabPanel(
+    "Home",
+    titlePanel("Home"),
+    br(),
+    # hr(),
+    wellPanel(
+      h3("Welcome to the", strong("shinybrms"), "app!",
+         style = "text-align:center"),
+      # br(),
+      h4("Description"),
+      p("This",
+        a("Shiny", href = "https://shiny.rstudio.com/", target = "_blank"),
+        "app is part of the",
+        a("R", href = "https://www.R-project.org/", target = "_blank"),
+        "package",
+        a(HTML(paste(strong("shinybrms"))), href = "https://fweber144.github.io/shinybrms/", target = "_blank"),
+        "and allows to fit Bayesian regression models using the R package",
+        a(HTML(paste(strong("brms"))), href = "https://paul-buerkner.github.io/brms/", target = "_blank"),
+        "which in turn relies on",
+        a("Stan", href = "https://mc-stan.org/", target = "_blank", .noWS = "after"),
+        ". More specifically, the only", strong("brms") ,"backend currently supported by",
+        strong("shinybrms"), "is the R package",
+        a(HTML(paste(strong("rstan"))), href = "https://mc-stan.org/rstan/", target = "_blank", .noWS = "after"),
+        "."),
+      h4("Bayesian regression models"),
+      p("The fundamental principle of Bayesian statistics is", em("Bayes' theorem", .noWS = "after"),
+        ". In the context relevant for this app, Bayes' theorem may be reduced to the statement",
+        "that the joint posterior distribution of all parameters in the regression model is",
+        "proportional to the product of their joint prior distribution and the likelihood.",
+        "(Here and in the following, the term \"distribution\" is used interchangeably for a",
+        "probability distribution and the corresponding probability density function or",
+        "probability mass function.)",
+        "The posterior distribution reflects the knowledge about the parameters", em("after"),
+        "having seen the data, whereas",
+        "the prior distribution reflects the knowledge about the parameters", em("before"),
+        "having seen the data.",
+        "The likelihood corresponds to the distribution of the outcome conditional on the",
+        "parameters and the predictors. (Note that the likelihood is considered as a function of",
+        "the parameters.)",
+        "Thus, after having specified the likelihood and the prior (distribution), the aim of a",
+        "Bayesian data analysis is to infer the posterior (distribution) and then perform",
+        "analyses based on the posterior, e.g. plotting marginal posterior distributions and",
+        "calculating their 2.5%, 50%, and 97.5% quantiles."),
+      p("For a more thorough introduction to Bayesian statistics in general as well as",
+        "Bayesian regression models in particular, the following textbooks might",
+        "be helpful:",
+        tags$ul(
+          tags$li("McElreath R (2020).",
+                  em("Statistical Rethinking: A Bayesian Course with Examples in R and Stan", .noWS = "after"),
+                  ". 2nd ed. Boca Raton, FL: CRC Press."),
+          tags$li("Gelman A, Carlin JB, Stern HS, Dunson DB, Vehtari A, and Rubin DB (2014).",
+                  em("Bayesian Data Analysis", .noWS = "after"),
+                  ". 3rd ed. Boca Raton, FL: CRC Press.")
+        )),
+      h4("Notes"),
+      p("The structure of the", strong("shinybrms"), "app follows the principle described in the previous",
+        "section \"Bayesian regression models\":",
+        "The three main pages in the navigation bar above are \"Likelihood\", \"Prior\", and \"Posterior\".",
+        "Before starting with these pages, the dataset has to be uploaded on page \"Data\" (even though",
+        "for testing purposes, you may also choose an example dataset there). Every page should provide",
+        "help texts where necessary. If you need more help, if you want to suggest improvements, or if you",
+        "found a bug, please open an issue on", # "a bug, please follow the instructions given on page \"More\"", HTML("&rarr;"), "\"About\".",
+        a("GitHub", href = "https://github.com/fweber144/shinybrms/issues", target = "_blank", .noWS = "after"),
+        ". Some basic information about", strong("shinybrms"), "as well as some legal information",
+        "may be found on page \"More\"", HTML("&rarr;"), "\"About\".",
+        "Links to the software relevant for this app are given on",
+        "page \"More\"", HTML("&rarr;"), "\"Links\".",
+        "References for literature cited throughout the app may be found on",
+        "page \"More\"", HTML("&rarr;"), "\"References\"."),
+      p("Furthermore, the following conventions are used throughout this app:",
+        tags$ul(
+          tags$li("Names of R packages are written in bold (e.g.", strong("brms", .noWS = "after"), ")."),
+          tags$li("Names of R functions are given according to the scheme",
+                  code("<package>::<function>()"), "with", code("<package>"), "denoting the R package which",
+                  "contains the", code("<function>", .noWS = "after"), ". Where possible, this scheme is hyperlinked.")
+        ))
+    ),
+    # hr(),
+    icon = icon("home")
+  ),
+  tabPanel(
     "Data",
     titlePanel("Data"),
     br(),
@@ -40,6 +136,22 @@ ui <- navbarPage(
         # Horizontal line (first one, so set the global hr() style here):
         hr(tags$style(HTML("hr {border-top: 1px solid #b0b0b0;}"))),
         h4("Example dataset"),
+        helpText("Some example datasets are loaded from third-party R packages (",
+                 a(HTML(paste(strong("lme4"))),
+                   href = "https://CRAN.R-project.org/package=lme4",
+                   target = "_blank",
+                   .noWS = "outside"),
+                 ", ",
+                 a(HTML(paste(strong("MASS"))),
+                   href = "https://CRAN.R-project.org/package=MASS",
+                   target = "_blank",
+                   .noWS = "after"),
+                 ", or ",
+                 a(HTML(paste(strong("rstanarm"))),
+                   href = "https://mc-stan.org/rstanarm/",
+                   target = "_blank",
+                   .noWS = "after"),
+                 ")."),
         selectInput("ex_da_sel", NULL,
                     choices = c("Choose example dataset ..." = "",
                                 "Arabidopsis (from package \"lme4\")" = "Arabidopsis",
@@ -51,6 +163,7 @@ ui <- navbarPage(
                                 "Puromycin" = "Puromycin",
                                 "quine (from package \"MASS\")" = "quine",
                                 "Rabbit (from package \"MASS\")" = "Rabbit",
+                                "roaches (from package \"rstanarm\")" = "roaches",
                                 "sleepstudy (from package \"lme4\")" = "sleepstudy",
                                 "ToothGrowth" = "ToothGrowth"),
                     selectize = TRUE),
@@ -127,68 +240,66 @@ ui <- navbarPage(
                     selectize = TRUE),
         strong("Parameters (with corresponding link functions) specific to this distributional family:"),
         tableOutput("dist_link"),
-        helpText(HTML(paste0(
-          "For details concerning the link functions, see the help for function ",
-          code("brms::brmsfamily()"),
-          " from package ",
-          a(HTML("<strong>brms</strong>"),
-            href = "https://CRAN.R-project.org/package=brms",
+        helpText(
+          "For details concerning the link functions, see the help for the R function",
+          a(HTML(paste(code("brms::brmsfamily()"))),
+            href = "https://paul-buerkner.github.io/brms/reference/brmsfamily.html",
             target = "_blank"),
-          " and the ", strong("brms"), " vignette ",
+          "and the", strong("brms"), "vignette",
           a("\"Parameterization of Response Distributions in brms\"",
             href = "https://cran.r-project.org/web/packages/brms/vignettes/brms_families.html",
-            target = "_blank"),
-          ". Note that for each parameter, the link function only applies if this parameter is ",
-          "actually modeled by (nonconstant) predictors. Currently, this is only supported ",
-          "for the location parameter (e.g. ", code("mu"), " for a Gaussian distribution)."
-        )))
+            target = "_blank",
+            .noWS = "after"),
+          ". Note that for each parameter, the link function only applies if this parameter is",
+          "actually modeled by (nonconstant) predictors. Currently, this is only supported",
+          "for the location parameter (e.g.", code("mu"), "for a Gaussian distribution)."
+        )
       ),
       tabPanel(
         "Predictors",
         titlePanel("Predictors"),
         br(),
-        helpText("Choose the predictors (the independent variables). More specifically, you may define",
-                 "main effects of predictors and interactions between predictors.",
-                 "An intercept (i.e. a constant) will always be included.",
-                 "Numeric variables (with \"numeric\" including \"integer\") are treated as continuous",
-                 "predictors. Non-numeric variables are treated as nominal predictors. The type of",
-                 "a variable may be seen on the \"Data\" page when choosing the \"Structure\" preview",
-                 "type. If you want a numeric variable to be treated as a nominal predictor, you have",
-                 "to convert this variable in your dataset to a character variable, e.g. by",
-                 "changing the value \"1\" to \"level1\", the value \"2\" to \"level2\" and so on.",
-                 "For nominal predictors, the first level (after sorting alphabetically) will be the",
-                 "reference level."),
+        helpText(
+          p("Choose the predictors (the independent variables). More specifically, you may define",
+            "main effects of predictors and interactions between predictors.",
+            "An overall intercept will always be included."),
+          p("Numeric variables (with \"numeric\" including \"integer\") are treated as continuous",
+            "predictors. Non-numeric variables are treated as nominal predictors. The type of",
+            "a variable may be seen on the \"Data\" page when choosing the \"Structure\" preview",
+            "type. If you want a numeric variable to be treated as a nominal predictor, you have",
+            "to convert this variable in your dataset to a character variable, e.g. by",
+            "changing the value \"1\" to \"level1\", the value \"2\" to \"level2\" and so on.",
+            "For nominal predictors, the first level (after sorting alphabetically) will be the",
+            "reference level.")),
         wellPanel(
           h3("Main effects"),
           helpText("Note:",
                    tags$ul(
-                     tags$li("Nonvarying effects are also known as population-level or \"fixed\" effects."),
-                     tags$li("Varying effects are also known as group-level or \"random\" effects."),
-                   ),
-                   "The terms \"fixed\" and \"random\" effects are put in quotation marks as they",
-                   "are not really appropriate for a Bayesian regression model."),
-          h4("Nonvarying main effects"),
+                     tags$li("Nonpooled effects are also known as constant, population-level, or fixed effects."),
+                     tags$li("Partially pooled effects are also known as varying, group-level, or random effects."),
+                   )),
+          h4("Nonpooled main effects"),
           helpText("Start typing or click into the field below to choose variables for which",
-                   "nonvarying main effects shall be added."),
-          selectInput("pred_mainNV_sel", NULL,
-                      choices = c("Choose variables for nonvarying main effects ..." = ""),
+                   "nonpooled main effects shall be added."),
+          selectInput("pred_mainNP_sel", NULL,
+                      choices = c("Choose variables for nonpooled main effects ..." = ""),
                       multiple = TRUE,
                       selectize = TRUE),
-          h4("Varying intercepts"),
+          h4("Partially pooled main effects"),
           helpText("Start typing or click into the field below to choose variables for which",
-                   "varying intercepts shall be added."),
-          selectInput("pred_mainV_sel", NULL,
-                      choices = c("Choose variables for varying intercepts ..." = ""),
+                   "partially pooled main effects shall be added."),
+          selectInput("pred_mainPP_sel", NULL,
+                      choices = c("Choose variables for partially pooled main effects ..." = ""),
                       multiple = TRUE,
                       selectize = TRUE)
         ),
         wellPanel(
           h3("Interaction effects"),
           helpText(
-            p("Here, the term \"interaction\" not only includes interactions between",
-              "population-level predictors, but also between population-level and group-level",
-              "predictors (yielding varying slopes) as well as between group-level predictors",
-              "(yielding a new group-level predictor with varying intercepts).",
+            p("Here, the term \"interaction\" not only denotes interactions involving only",
+              "predictors with nonpooled effects (yielding an interaction with nonpooled effects),",
+              "but also interactions involving predictors with partially pooled effects (yielding",
+              "an interaction with partially pooled effects).",
               "This broad definition of \"interaction\" is indicated here by the symbol \"<-->\"."),
             p("Only variables already having a main effect may be included in an interaction",
               "term. In the rare case that you really need an interaction involving a variable",
@@ -206,7 +317,7 @@ ui <- navbarPage(
                       choices = c("Choose variables for an interaction term ..." = ""),
                       multiple = TRUE,
                       selectize = TRUE),
-          actionButton("pred_int_add", "Add interaction term"),
+          actionButton("pred_int_add", "Add interaction term", class = "btn-primary"),
           br(),
           br(),
           selectInput("pred_int_sel", "Added interaction terms (you may edit this list, see above):",
@@ -215,14 +326,54 @@ ui <- navbarPage(
                       selectize = TRUE)
         ),
         wellPanel(
+          h3("Offset"),
+          helpText(withMathJax(
+            p("An offset is a predictor with a coefficient fixed to 1.",
+              "In most regression analyses, an offset is not needed.",
+              "In the context of this app, the typical use case would be a count data outcome",
+              "where the observation time differs from individual to individual (see the",
+              strong("rstanarm"), "vignette",
+              a("\"Estimating Generalized Linear Models for Count Data with rstanarm\"",
+                href = "https://mc-stan.org/rstanarm/articles/count.html",
+                target = "_blank"),
+              "for an example)."),
+            p("If you want to specify an offset, please follow these steps which ensure that",
+              "the default prior for the intercept (at centered predictors) is adopted accordingly:",
+              tags$ol(
+                tags$li("Add the offset variable in the \"Nonpooled main effects\" input field",
+                        "in the tab \"Predictors\"."),
+                tags$li("In the \"Specification of custom priors\" on page \"Prior\":",
+                        tags$ol(
+                          tags$li("Choose parameter class \"b\"."),
+                          tags$li("Choose the coefficient of the offset variable."),
+                          tags$li("Type", code("constant(1)"), "in the input field for the prior distribution."),
+                          tags$li("Click on \"Add prior\".")
+                        ))
+              )),
+            p(strong("Important:"),
+              "If you followed these steps, then after the Stan run, you will be warned that",
+              "at least one MCMC diagnostic is worrying. The problem is that the steps above",
+              "create a constant parameter with a missing value (", code("NA", .noWS = "outside"),
+              ") for the corresponding \\(\\widehat{R}\\), bulk-ESS, and tail-ESS. Thus,",
+              "for the \\(\\widehat{R}\\), bulk-ESS, and tail-ESS",
+              em("of this constant parameter", .noWS = "after"), ", you may ignore the warning.",
+              "However, the MCMC diagnostics might be worrying for other reasons as well. Thus, you",
+              "need to check the MCMC diagnostics very carefully. In particular, you need to check",
+              "the HMC-specific diagnostics as well as the detailed table of the general MCMC diagnostics.")
+          ))
+        ),
+        wellPanel(
           h3("Preview of chosen predictor terms"),
-          helpText(HTML(paste0(
-            "Here, you can get a preview of the currently chosen predictor terms. ",
-            "This is mainly intended as a check for those familiar with R's and ",
-            strong("brms"),
-            "'s formula syntax. A preview of the full formula is given in the tab \"Formula ",
-            "preview\" which may be found in the panel on the left-hand side."
-          ))),
+          helpText(
+            p("Here, you can get a preview of the currently chosen predictor terms. ",
+              "This is mainly intended as a check for those familiar with R's and ",
+              strong("brms", .noWS = "outside"),
+              "'s formula syntax. A preview of the full formula is given in the tab \"Formula ",
+              "preview\" which may be found in the panel on the left-hand side."),
+            p("A missing value (", code("NA", .noWS = "outside"), ") in column \"Group\" stands",
+              "for the whole sample (i.e. no group). The value \"1\" in column \"Effect(s)\"",
+              "stands for the intercept (or intercepts, if \"Group\" exists).")
+          ),
           tableOutput("pred_view")
         )
       ),
@@ -241,19 +392,25 @@ ui <- navbarPage(
     br(),
     helpText(HTML(paste0(
       "Build the joint prior distribution of all parameters in your model by ",
-      "placing independent priors on all parameters separately. ",
-      "For parameters for which you do not specify a custom prior, the default prior from the ",
-      "package ", strong("brms"), " will be used. ",
-      "Note that the parameter \"Intercept\" is the intercept when centering the predictors ",
-      "(this is only the internally used intercept; for the output, the intercept with ",
-      "respect to the noncentered predictors is given (named \"b_Intercept\")). ",
-      "For details concerning the prior, see the help for functions ",
-      code("brms::get_prior()"),
-      " and ",
-      code("brms::set_prior()"),
-      " from package ",
-      a(HTML("<strong>brms</strong>"),
-        href = "https://CRAN.R-project.org/package=brms",
+      "placing independent priors on all parameters separately. Notes:",
+      tags$ul(
+        tags$li("For parameters for which you do not specify a",
+                "custom prior, the default prior from the package",
+                strong("brms"), "will be used."),
+        tags$li("The parameter named \"Intercept\" is the intercept when centering the predictors.",
+                "This is only the internally used intercept; for the output, the intercept with",
+                "respect to the noncentered predictors is given (named \"b_Intercept\")."),
+        tags$li("As soon as you choose a new dataset on page \"Data\" (even if you upload",
+                "the same dataset again), the custom priors are automatically reset."),
+        tags$li("As soon as you change the likelihood, the custom priors are automatically reset.")
+      ),
+      "For details concerning the default priors, see the help for the R function ",
+      a(HTML(paste(code("brms::set_prior()"))),
+        href = "https://paul-buerkner.github.io/brms/reference/set_prior.html",
+        target = "_blank"),
+      ". For details concerning the specification of custom priors, see the help for ",
+      a(HTML(paste(code("brms::set_prior()"))),
+        href = "https://paul-buerkner.github.io/brms/reference/set_prior.html",
         target = "_blank"),
       " as well as the ",
       a(HTML("Stan documentation"),
@@ -266,7 +423,7 @@ ui <- navbarPage(
     br(),
     strong("Default priors for the parameters belonging to the current likelihood:"),
     tableOutput("prior_default_view"),
-    helpText("An empty field in column \"Prior\" denotes a flat prior over the domain of the",
+    helpText("An empty field in column \"Prior\" denotes a flat prior over the support of the",
              "corresponding parameter."),
     hr(),
     h3("Custom priors"),
@@ -294,7 +451,7 @@ ui <- navbarPage(
                     selectize = TRUE),
         selectInput("prior_group_sel",
                     HTML(paste0(
-                      "Group (for varying effects):",
+                      "Group (for partially pooled effects):",
                       helpText("Note: Leave empty while having an empty \"Coefficient\" field to",
                                "use all groups belonging to the selected parameter class.",
                                "Unfortunately, you are not able to clear this \"Group\" field",
@@ -315,9 +472,15 @@ ui <- navbarPage(
                           tags$li(HTML(paste0("specify a prior distribution using a Stan function ",
                                               em("or")))),
                           tags$li(HTML(paste0("specify a prior distribution using one of the ",
-                                              "special functions defined by ", strong("brms"),
+                                              "special (pseudo-)functions defined by ", strong("brms"),
                                               " for this purpose (e.g. ",
-                                              code("horseshoe"), " and ", code("lkj"),
+                                              a(HTML(paste(code("brms::horseshoe()"))),
+                                                href = "https://paul-buerkner.github.io/brms/reference/horseshoe.html",
+                                                target = "_blank"),
+                                              " and ",
+                                              a(HTML(paste(code("lkj"))),
+                                                href = "https://paul-buerkner.github.io/brms/reference/set_prior.html",
+                                                target = "_blank"),
                                               ") ", em("or")))),
                           tags$li("leave this field empty to use a flat prior.")
                         ),
@@ -331,7 +494,7 @@ ui <- navbarPage(
                   )),
                   value = "",
                   placeholder = "Enter prior distribution using a Stan function or leave empty to use a flat prior"),
-        actionButton("prior_add", "Add prior"),
+        actionButton("prior_add", "Add prior", class = "btn-primary"),
         br(),
         br(),
         br(),
@@ -342,7 +505,7 @@ ui <- navbarPage(
         br(),
         strong("Custom priors currently set:"),
         tableOutput("prior_set_view"),
-        helpText("An empty field in column \"Prior\" denotes a flat prior over the domain of the",
+        helpText("An empty field in column \"Prior\" denotes a flat prior over the support of the",
                  "corresponding parameter.")
       )
     )
@@ -351,205 +514,342 @@ ui <- navbarPage(
     "Posterior",
     titlePanel("Posterior"),
     br(),
-    helpText("Use",
-             a("Stan", href = "https://mc-stan.org/", target = "_blank"),
-             "to infer the joint posterior distribution of all parameters in your model",
-             "by sampling."),
-    wellPanel(
-      h3("Stan code"),
-      helpText(
-        "Here, you can get a preview of the Stan code for your model and download it.",
-        
-        "The data used in the", code("data {...}"), "program block of the Stan code is the Stan",
-        "data. Thus, the Stan code goes together with the Stan data.",
-        
-        "Apart from checking purposes,",
-        "this is useful for example if you want to customize the model and then run Stan by yourself."
-      ),
-      checkboxInput("show_stancode", "Show Stan code", value = FALSE),
-      conditionalPanel(
-        condition = "input.show_stancode",
-        verbatimTextOutput("stancode_view", placeholder = TRUE),
-      ),
-      downloadButton("stancode_download", "Download Stan code")
+    helpText(
+      "Use", a("Stan", href = "https://mc-stan.org/", target = "_blank"),
+      "to infer the joint posterior distribution of all parameters in your model",
+      "by sampling. More specifically, Stan uses a modified",
+      # "variant of the",
+      "no-U-turn sampler (NUTS)",
+      # a("(Hoffman and Gelman, 2014)",
+      #   href = "http://jmlr.org/papers/v15/hoffman14a.html",
+      #   target = "_blank"),
+      "which is a special Hamiltonian Monte Carlo (HMC)",
+      "sampler which in turn is a special Markov chain Monte Carlo (MCMC) sampler.",
+      "Details concerning Stan's sampling algorithm may be found in the",
+      a("Stan documentation",
+        href = "https://mc-stan.org/users/documentation/",
+        target = "_blank",
+        .noWS = "after"),
+      "."
     ),
-    wellPanel(
-      h3("Stan data"),
-      helpText(
-        "Here, you can get a preview of the structure of the Stan data for your model and download it.",
-        
-        "The Stan data is the data used in the", code("data {...}"), "program block in the Stan",
-        "code. Thus, the Stan data goes together with the Stan code.",
-        
-        "Apart from checking purposes,",
-        "this is useful for example if you want to customize the model and then run Stan by yourself."
-      ),
-      checkboxInput("show_standata", "Show structure of Stan data", value = FALSE),
-      conditionalPanel(
-        condition = "input.show_standata",
-        verbatimTextOutput("standata_view", placeholder = TRUE),
-      ),
-      downloadButton("standata_download", "Download Stan data")
-    ),
-    wellPanel(
-      h3("Advanced options"),
-      helpText(HTML(paste0(
-        "Here, you can set advanced options for the function ",
-        code("brms::brm()"),
-        "which is the central function for inferring the posterior. ",
-        "These advanced options have sensible defaults, but sometimes they need to be changed. ",
-        "For details on these advanced options, see the help for ",
-        code("brms::brm()"),
-        " from package ",
-        a(HTML("<strong>brms</strong>"),
-          href = "https://CRAN.R-project.org/package=brms",
-          target = "_blank"),
-        " and the help for ",
-        code("rstan::sampling()"),
-        " as well as for ",
-        code("rstan::stan()"),
-        " from package ",
-        a(HTML("<strong>rstan</strong>"),
-          href = "https://CRAN.R-project.org/package=rstan",
-          target = "_blank"),
-        "."
-      ))),
-      checkboxInput("show_advOpts", "Show advanced options", value = FALSE),
-      conditionalPanel(
-        condition = "input.show_advOpts",
-        helpText("Notes:",
-                 tags$ol(
-                   tags$li(paste("To obtain reproducible results, you need to specify a value for",
-                                 "option \"Seed\" and enter this value each time you want to",
-                                 "obtain the same results. Leave option \"Seed\" empty to use a",
-                                 "random seed (giving nonreproducible results).")),
-                   tags$li("Numeric options with an empty field (apart from option \"Seed\") have",
-                           "a default value which depends on other options. Leave them empty to",
-                           "use this default value."),
-                   tags$li("Numeric options with a preset value may not be left empty."),
-                   tags$li(paste("Internally, the number of cores is set automatically to the",
-                                 "minimum value of options \"Cores\" and \"Chains\"."))
-                 )),
-        fluidRow(
-          column(5,
-                 numericInput("advOpts_seed", "Seed:",
-                              value = NA, step = 1L),
-                 numericInput("advOpts_cores", "Cores:",
-                              value = getOption("mc.cores", parallel::detectCores()), step = 1L, min = 1L),
-                 numericInput("advOpts_chains", "Chains:",
-                              value = 4L, step = 1L, min = 1L),
-                 numericInput("advOpts_iter", "Total iterations per chain:",
-                              value = 2000L, step = 1L, min = 1L),
-                 numericInput("advOpts_warmup", "Warmup iterations per chain:",
-                              value = NA, step = 1L, min = 0L),
-                 numericInput("advOpts_thin", "Thinning rate:",
-                              value = 1L, step = 1L, min = 1L)),
-          column(5, offset = 1,
-                 radioButtons("advOpts_inits", "Initial values:",
-                              choices = list("Random" = "random", "Zero" = "0"),
-                              inline = TRUE),
-                 numericInput("advOpts_init_r",
-                              HTML(paste0("Range of random initial values in the unconstrained parameter space (",
-                                          code("\"init_r\""),
-                                          "; only relevant if random initial values are chosen):")),
-                              value = 2, step = 0.1, min = 0),
-                 numericInput("advOpts_adapt_delta",
-                              HTML(paste0("Target Metropolis acceptance rate (", code("\"adapt_delta\""), "):")),
-                              value = 0.95, step = 0.01, min = 0, max = 1),
-                 numericInput("advOpts_max_treedepth",
-                              HTML(paste0("Maximum tree depth (", code("\"max_treedepth\""), "):")),
-                              value = 15L, step = 1L, min = 1L),
-                 checkboxInput("advOpts_open_progress", strong("Open progress"),
-                               value = TRUE),
-                 numericInput("advOpts_refresh",
-                              HTML(paste0("Progress-refreshing step size (", code("\"refresh\""), "):")),
-                              value = NA, step = 1L, min = 0L),
-                 checkboxInput("advOpts_save_all_pars",
-                               strong("Save draws from", em("all"), "parameters, including internal ones (", code("\"save_all_pars\"", .noWS = "outside"), ")"),
-                               value = FALSE),
-                 checkboxInput("advOpts_save_warmup", strong("Save warmup"),
-                               value = TRUE))
-        )
-      )
-    ),
-    wellPanel(
-      h3("Run Stan"),
-      helpText("Note: If the advanced option \"Open progress\" is selected (as per default),",
-               "Windows users having Firefox set as their default web browser may need to manually",
-               "copy the link to the Stan HTML progress file which is automatically opening up and",
-               "paste this link into a different web browser for viewing the progress file there."),
-      actionButton("run_stan", "Run Stan (may take a while)", class = "btn-primary")
-    ),
-    wellPanel(
-      h3("Output"),
-      strong("Date and time when Stan run was finished:"),
-      textOutput("fit_date"),
-      br(),
-      # br(),
-      h4("Hamiltonian Monte Carlo (HMC) diagnostics"),
-      strong("Divergences:"),
-      verbatimTextOutput("diagn_div", placeholder = TRUE),
-      strong("Tree depth:"),
-      verbatimTextOutput("diagn_tree", placeholder = TRUE),
-      strong("Bayesian fraction of missing information for the energy transitions (E-BFMI):"),
-      verbatimTextOutput("diagn_energy", placeholder = TRUE),
-      br(),
-      # br(),
-      h4("Summary"),
-      verbatimTextOutput("smmry_view", placeholder = TRUE),
-      br(),
-      # br(),
-      h4("Download"),
-      selectInput("stanout_download_sel", "Choose output file to download:",
-                  choices = c("\"brmsfit\" object (RDS file)" = "brmsfit_obj",
-                              "Matrix of posterior draws (CSV file)" = "draws_mat_csv",
-                              "Matrix of posterior draws (RDS file)" = "draws_mat_obj",
-                              "Array of posterior draws (RDS file)" = "draws_arr_obj"),
-                  selectize = TRUE),
-      helpText(HTML(paste0("The most comprehensive output object is the \"brmsfit\" object which ",
-                           "is the output from ", code("brms::brm()"), ", the central function ",
-                           "for inferring the posterior."))),
-      downloadButton("stanout_download", "Download output file"),
-      br(),
-      br(),
-      h4("Interactive output inspection using package", strong("shinystan")),
-      helpText(
-        "Notes:",
-        tags$ul(
-          tags$li(
-            "In the", strong("shinystan"), "app, the parameter names given by", strong("brms"),
-            "are used. These are as follows:",
-            tags$ul(
-              tags$li("\"b_Intercept\" is the intercept (with respect to the noncentered predictors)."),
-              tags$li("The parameters starting with \"b_\" are the (nonvarying) regression coefficients."),
-              tags$li("The parameters starting with \"r_\" are the varying effects."),
-              tags$li("The parameters starting with \"sd_\" are the standard deviations of the",
-                      "varying effects."),
-              tags$li("The parameters starting with \"cor_\" are the correlations between the",
-                      "varying effects of the same group-level term."),
-              tags$li("\"log-posterior\" is the (accumulated) log-posterior density (up to a constant)."),
-              tags$li(HTML(paste("All other parameters are parameters specific to the chosen",
-                                 "distributional family for the outcome (see page \"Likelihood\"",
-                                 "&rarr; \"Outcome\").")))
-            )
+    navlistPanel(
+      tabPanel(
+        "Run Stan",
+        titlePanel("Run Stan"),
+        br(),
+        wellPanel(
+          h3("Stan code"),
+          helpText(
+            "Here, you can get a preview of the Stan code for your model and download it.",
+            
+            "The data used in the", code("data {...}"), "program block of the Stan code is the Stan",
+            "data. Thus, the Stan code goes together with the Stan data.",
+            
+            "Apart from checking purposes,",
+            "this is useful for example if you want to customize the model and then run Stan by yourself."
           ),
-          tags$li(
-            HTML(paste0(
-              "The R objects needed for the posterior predictive checks in ", strong("shinystan"),
-              " are automatically created. These are the observations for the outcome (object ",
-              code("y"), ") and the corresponding posterior predictive replications (object ",
-              code("y_rep"), "). You can select them in the respective \"Object from global ",
-              "environment\" input selector under \"DIAGNOSE\" &rarr; \"PPcheck\" &rarr; ",
-              "\"Select data\" in the ", strong("shinystan"), " app."
+          checkboxInput("show_stancode", "Show Stan code", value = FALSE),
+          conditionalPanel(
+            condition = "input.show_stancode",
+            verbatimTextOutput("stancode_view", placeholder = TRUE),
+          ),
+          downloadButton("stancode_download", "Download Stan code")
+        ),
+        wellPanel(
+          h3("Stan data"),
+          helpText(
+            "Here, you can get a preview of the structure of the Stan data for your model and download it.",
+            
+            "The Stan data is the data used in the", code("data {...}"), "program block in the Stan",
+            "code. Thus, the Stan data goes together with the Stan code.",
+            
+            "Apart from checking purposes,",
+            "this is useful for example if you want to customize the model and then run Stan by yourself."
+          ),
+          checkboxInput("show_standata", "Show structure of Stan data", value = FALSE),
+          conditionalPanel(
+            condition = "input.show_standata",
+            verbatimTextOutput("standata_view", placeholder = TRUE),
+          ),
+          downloadButton("standata_download", "Download Stan data")
+        ),
+        wellPanel(
+          h3("Advanced options"),
+          helpText(HTML(paste0(
+            "Here, you can set advanced options for the R function ",
+            a(HTML(paste(code("brms::brm()"))),
+              href = "https://paul-buerkner.github.io/brms/reference/brm.html",
+              target = "_blank"),
+            "which is the central function for inferring the posterior. ",
+            "These advanced options have sensible defaults, but sometimes they need to be changed. ",
+            "For details on these advanced options, see the help for the functions",
+            a(HTML(paste(code("brms::brm()"))),
+              href = "https://paul-buerkner.github.io/brms/reference/brm.html",
+              target = "_blank"),
+            ", ",
+            a(HTML(paste(code("rstan::sampling()"))),
+              href = "https://mc-stan.org/rstan/reference/stanmodel-method-sampling.html",
+              target = "_blank"),
+            ", and ",
+            a(HTML(paste(code("rstan::stan()"))),
+              href = "https://mc-stan.org/rstan/reference/stan.html",
+              target = "_blank"),
+            "."
+          ))),
+          checkboxInput("show_advOpts", "Show advanced options", value = FALSE),
+          conditionalPanel(
+            condition = "input.show_advOpts",
+            helpText(
+              "Notes:",
+              tags$ol(
+                tags$li(paste("To obtain reproducible results, you need to specify a value for",
+                              "option \"Seed\" and enter this value each time you want to",
+                              "obtain the same results. Leave option \"Seed\" empty to use a",
+                              "random seed (giving nonreproducible results).")),
+                tags$li("Numeric options with an empty field (apart from option \"Seed\") have",
+                        "a default value which depends on other options. Leave them empty to",
+                        "use this default value. These defaults are:",
+                        tags$ul(
+                          tags$li("For option \"Warmup iterations per chain\": half of \"Total iterations per chain\" (rounded down if this fraction is not an integer)."),
+                          tags$li("For option \"Progress-refreshing step size\": tenth of \"Total iterations per chain\", but at least 1.")
+                        )),
+                tags$li("Numeric options with a preset value may not be left empty."),
+                tags$li(paste("Internally, the number of cores is set automatically to the",
+                              "minimum value of options \"Cores\" and \"Chains\"."))
+              )
+            ),
+            fluidRow(
+              column(5,
+                     numericInput("advOpts_seed", "Seed:",
+                                  value = NA, step = 1L),
+                     numericInput("advOpts_cores", "Cores:",
+                                  value = getOption("mc.cores", parallel::detectCores()), step = 1L, min = 1L),
+                     numericInput("advOpts_chains", "Chains:",
+                                  value = 4L, step = 1L, min = 1L),
+                     numericInput("advOpts_iter", "Total iterations per chain:",
+                                  value = 2000L, step = 1L, min = 1L),
+                     numericInput("advOpts_warmup", "Warmup iterations per chain:",
+                                  value = NA, step = 1L, min = 0L),
+                     numericInput("advOpts_thin", "Thinning rate:",
+                                  value = 1L, step = 1L, min = 1L)),
+              column(5, offset = 1,
+                     radioButtons("advOpts_inits", "Initial values:",
+                                  choices = list("Random" = "random", "Zero" = "0"),
+                                  inline = TRUE),
+                     numericInput("advOpts_init_r",
+                                  HTML(paste0("Range of random initial values in the unconstrained parameter space (",
+                                              code("\"init_r\""),
+                                              "; only relevant if random initial values are chosen):")),
+                                  value = 2, step = 0.1, min = 0),
+                     numericInput("advOpts_adapt_delta",
+                                  HTML(paste0("Target Metropolis acceptance rate (", code("\"adapt_delta\""), "):")),
+                                  value = 0.95, step = 0.01, min = 0, max = 1),
+                     numericInput("advOpts_max_treedepth",
+                                  HTML(paste0("Maximum tree depth (", code("\"max_treedepth\""), "):")),
+                                  value = 15L, step = 1L, min = 1L),
+                     checkboxInput("advOpts_open_progress", strong("Open progress"),
+                                   value = TRUE),
+                     numericInput("advOpts_refresh",
+                                  HTML(paste0("Progress-refreshing step size (", code("\"refresh\""), "):")),
+                                  value = NA, step = 1L, min = 0L),
+                     checkboxInput("advOpts_save_all_pars",
+                                   strong("Save draws for", em("all"), "parameters, including internal ones (", code("\"save_all_pars\"", .noWS = "outside"), ")"),
+                                   value = FALSE),
+                     checkboxInput("advOpts_save_warmup", strong("Save warmup"),
+                                   value = TRUE))
+            )
+          )
+        ),
+        wellPanel(
+          h3("Run Stan"),
+          helpText("Note: If the advanced option \"Open progress\" is selected (as per default),",
+                   "Windows users having Firefox set as their default web browser may need to manually",
+                   "copy the link to the Stan HTML progress file which is automatically opening up and",
+                   "paste this link into a different web browser for viewing the progress file there."),
+          actionButton("run_stan", "Run Stan (may take a while)", class = "btn-primary"),
+          br(),
+          br(),
+          strong("Date and time when Stan run was finished:"),
+          verbatimTextOutput("fit_date", placeholder = TRUE),
+          strong("Check if all MCMC diagnostics are OK (see the tab \"MCMC diagnostics\" for details):"),
+          verbatimTextOutput("diagn_all_out", placeholder = TRUE),
+          selectInput("stanout_download_sel", "Choose output file to download (optional, but recommended):",
+                      choices = c("\"brmsfit\" object (RDS file)" = "brmsfit_obj",
+                                  "List of MCMC diagnostics (RDS file)" = "diagn_obj",
+                                  "Matrix of posterior draws (CSV file)" = "draws_mat_csv",
+                                  "Matrix of posterior draws (RDS file)" = "draws_mat_obj",
+                                  "Array of posterior draws (RDS file)" = "draws_arr_obj"),
+                      selectize = TRUE),
+          helpText(HTML(paste0("The most comprehensive output object is the \"brmsfit\" object which ",
+                               "is the output from the R function ",
+                               a(HTML(paste(code("brms::brm()"))),
+                                 href = "https://paul-buerkner.github.io/brms/reference/brm.html",
+                                 target = "_blank"),
+                               ", the central function ",
+                               "for inferring the posterior."))),
+          downloadButton("stanout_download", "Download output file")
+        )
+      ),
+      tabPanel(
+        "MCMC diagnostics",
+        titlePanel("MCMC diagnostics"),
+        br(),
+        helpText(withMathJax(
+          p("Before using the Stan results for posterior inference, it is important to check the",
+            "convergence and efficiency of the sampling algorithm for the given model and data by",
+            "the help of", em("MCMC diagnostics", .noWS = "after"), ".",
+            "The MCMC diagnostics used here may be divided into",
+            em("HMC-specific diagnostics"), "and", em("general MCMC diagnostics", .noWS = "after"), ".",
+            "Lists of these two groups of MCMC diagnostics may be found below, together with some",
+            "basic guidelines for their interpretation. These basic guidelines are also checked",
+            "automatically. Note that these are", em("basic"), "guidelines", HTML("&ndash;"), 
+            "false positive and false negative alarms are possible and",
+            "in some situations, false alarms are more likely than in others.",
+            "For details concerning the MCMC diagnostics used here, see the",
+            a("\"Brief Guide to Stan’s Warnings\"",
+              href = "https://mc-stan.org/misc/warnings.html",
+              target = "_blank",
+              .noWS = "after"),
+            ",",
+            a("Betancourt (2017)",
+              href = "https://arxiv.org/abs/1701.02434",
+              target = "_blank",
+              .noWS = "after"),
+            ", and",
+            a("Vehtari et al. (2020)",
+              href = "https://doi.org/10.1214/20-BA1221",
+              target = "_blank",
+              .noWS = "after"),
+            ". The \"Brief Guide to Stan’s Warnings\" covers all MCMC diagnostics used here and",
+            "gives some advice on what to do when they indicate problems.",
+            "Betancourt (2017) focuses on the HMC-specific diagnostics,",
+            "whereas Vehtari et al. (2020) focus on the general MCMC diagnostics."),
+          p("The HMC-specific diagnostics are:",
+            tags$ul(
+              tags$li("the number of iterations ending with a divergence,"),
+              tags$li("the number of iterations hitting the maximum tree depth,"),
+              tags$li("the Bayesian fraction of missing information for the energy transitions (E-BFMI) of each chain.")
+            ),
+            "In general, the first two of these diagnostics are worrying if they are greater than",
+            "zero (i.e. at least one iteration ending with a divergence or at least one iteration",
+            "hitting the maximum tree depth) and the third diagnostic (E-BFMI) is worrying if it is",
+            "smaller than 0.2 for at least one chain."),
+          p("The general MCMC diagnostics (computed for each parameter",
+            "as well as for the accumulated log-posterior density) are:",
+            tags$ul(
+              tags$li("the modified",
+                      # "variant of the",
+                      "potential scale reduction factor \\(\\widehat{R}\\)",
+                      # "(",
+                      # a("Gelman and Rubin, 1992",
+                      #   href = "https://doi.org/10.1214/ss/1177011136",
+                      #   target = "_blank",
+                      #   .noWS = "outside"),
+                      # ";",
+                      # a("Brooks and Gelman, 1998",
+                      #   href = "https://doi.org/10.2307/1390675",
+                      #   target = "_blank",
+                      #   .noWS = "after"),
+                      # ")",
+                      "proposed by",
+                      a("Vehtari et al. (2020)",
+                        href = "https://doi.org/10.1214/20-BA1221",
+                        target = "_blank"),
+                      "(here simply called \"the\" \\(\\widehat{R}\\) instead of \"the modified\" \\(\\widehat{R}\\)),"),
+              tags$li("the effective sample size (ESS) in the bulk of the corresponding marginal posterior distribution (short: bulk-ESS or \\(\\text{ESS}_{\\text{bulk}}\\)),"),
+              tags$li("the ESS in the tails of the corresponding marginal posterior distribution (short: tail-ESS or \\(\\text{ESS}_{\\text{tail}}\\)).")
+            ),
+            "In general, the following values of the general MCMC diagnostics are worrying:",
+            tags$ul(
+              tags$li("\\(\\widehat{R} \\geq 1.01\\),"),
+              tags$li("\\(\\text{ESS}_{\\text{bulk}} \\leq 100 \\cdot n_{\\text{chains}}\\) with \\(n_{\\text{chains}}\\) denoting the number of chains,"),
+              tags$li("\\(\\text{ESS}_{\\text{tail}} \\leq 100 \\cdot n_{\\text{chains}}\\).")
             ))
+        )),
+        br(),
+        wellPanel(
+          h3("HMC-specific diagnostics"),
+          strong("Divergences:"),
+          verbatimTextOutput("diagn_div_out", placeholder = TRUE),
+          strong("Hits of maximum tree depth:"),
+          verbatimTextOutput("diagn_tree_out", placeholder = TRUE),
+          strong("E-BFMI:"),
+          verbatimTextOutput("diagn_EBFMI_out", placeholder = TRUE),
+        ),
+        wellPanel(
+          h3("General MCMC diagnostics"),
+          strong(withMathJax("\\(\\widehat{R}\\):")),
+          verbatimTextOutput("rhat_out", placeholder = TRUE),
+          strong("Bulk-ESS:"), # strong(withMathJax("\\(\\text{ESS}_{\\text{bulk}}\\):")),
+          verbatimTextOutput("essBulk_out", placeholder = TRUE),
+          strong("Tail-ESS:"), # strong(withMathJax("\\(\\text{ESS}_{\\text{tail}}\\):")),
+          verbatimTextOutput("essTail_out", placeholder = TRUE),
+          checkboxInput("show_general_MCMC_tab",
+                        "Show detailed table of the general MCMC diagnostics",
+                        value = FALSE),
+          conditionalPanel(
+            condition = "input.show_general_MCMC_tab",
+            verbatimTextOutput("general_MCMC_out", placeholder = TRUE)
           )
         )
       ),
-      numericInput("seed_PPD",
-                   paste("Seed for draws from posterior predictive distribution",
-                         "(leave empty to use a random seed):"),
-                   value = NA, step = 1L),
-      actionButton("act_launch_shinystan", HTML(paste("Launch", strong("shinystan"), "(may take a while)")))
+      tabPanel(
+        "Summary",
+        titlePanel("Summary"),
+        br(),
+        verbatimTextOutput("smmry_view", placeholder = TRUE)
+      ),
+      tabPanel(
+        HTML(paste("Launch", strong("shinystan"))),
+        titlePanel(HTML(paste("Launch", strong("shinystan")))),
+        br(),
+        helpText(
+          p("The package",
+            a(HTML(paste(strong("shinystan"))), href = "https://mc-stan.org/shinystan/", target = "_blank"),
+            "provides a Shiny app offering an interactive inspection of Stan's output."),
+          p("Notes:",
+            tags$ul(
+              tags$li(
+                "In the", strong("shinystan"), "app, the parameter names given by", strong("brms"),
+                "are used. These are as follows:",
+                tags$ul(
+                  tags$li("\"b_Intercept\" is the intercept (with respect to the noncentered predictors)."),
+                  tags$li("The parameters starting with \"b_\" are the nonpooled effects."),
+                  tags$li("If you used the", code("constant(1)"), "approach for including an offset, then",
+                          "the parameters starting with \"par_b_\" are internal parameters which you don't",
+                          "need to take into account."),
+                  tags$li("The parameters starting with \"r_\" are the partially pooled effects."),
+                  tags$li("The parameters starting with \"sd_\" are the standard deviations of the",
+                          "partially pooled effects."),
+                  tags$li("The parameters starting with \"cor_\" are the correlations between the",
+                          "partially pooled effects of the same group."),
+                  tags$li("\"log-posterior\" is the accumulated log-posterior density (up to an additive constant)."),
+                  tags$li(HTML(paste("All other parameters are parameters specific to the chosen",
+                                     "distributional family for the outcome (see page \"Likelihood\"",
+                                     "&rarr; \"Outcome\").")))
+                )
+              ),
+              tags$li(
+                HTML(paste0(
+                  "The R objects needed for the posterior predictive checks in ", strong("shinystan"),
+                  " are automatically created. These are the observations for the outcome (object ",
+                  code("y"), ") and the corresponding posterior predictive replications (object ",
+                  code("y_rep"), "). You can select them in the respective \"Object from global ",
+                  "environment\" input selector under \"DIAGNOSE\" &rarr; \"PPcheck\" &rarr; ",
+                  "\"Select data\" in the ", strong("shinystan"), " app."
+                ))
+              )
+            )
+          )
+        ),
+        numericInput("seed_PPD",
+                     paste("Seed for draws from the posterior predictive distribution",
+                           "(leave empty to use a random seed):"),
+                     value = NA, step = 1L),
+        actionButton("act_launch_shinystan",
+                     HTML(paste("Launch", strong("shinystan"), "(may take a while)")),
+                     class = "btn-primary")
+      )
     )
   ),
   navbarMenu(
@@ -560,60 +860,43 @@ ui <- navbarPage(
       br(),
       wellPanel(
         h3("Basic information"),
-        helpText(HTML(paste0(
-          "Note: This is the ", strong("shinybrms"), " ", em("app"), ". It is distributed under ",
-          "the same name as an ",
-          a("R", href = "https://www.R-project.org/", target = "_blank"),
-          " package which is available on ",
-          a("GitHub", href = "https://github.com/fweber144/shinybrms", target = "_blank"), " and ",
-          a("CRAN", href = "https://CRAN.R-project.org/package=shinybrms", target = "_blank"),
-          " (see also the ",
-          a("website", href = "https://fweber144.github.io/shinybrms/", target = "_blank"),
-          " for the ", strong("shinybrms"), " package)."
-        ))),
         tags$ul(
-          tags$li(HTML(paste0(
-            strong("Description: "),
-            "The ", strong("shinybrms"), " app is a graphical user interface (GUI) for the R package ",
-            a(HTML("<strong>brms</strong>"),
-              href = "https://CRAN.R-project.org/package=brms",
-              target = "_blank"),
-            " which allows to fit Bayesian regression models using ",
-            a("Stan", href = "https://mc-stan.org/", target = "_blank"),
-            " (more specifically, using its R interface, the package ",
-            a(HTML("<strong>rstan</strong>"),
-              href = "https://CRAN.R-project.org/package=rstan",
-              target = "_blank"),
-            "). The GUI is a ",
-            a("Shiny", href = "https://shiny.rstudio.com/", target = "_blank"),
-            " app, i.e. it was created using the R package ",
-            a(HTML("<strong>shiny</strong>"),
-              href = "https://CRAN.R-project.org/package=shiny",
-              target = "_blank"),
-            "."
-          ))),
           tags$li(strong("Author:"),
-                  "Frank Weber (",
-                  a("ORCID iD: 0000-0002-4842-7922",
+                  "Frank Weber (ORCID iD:",
+                  a("0000-0002-4842-7922",
                     href = "https://orcid.org/0000-0002-4842-7922",
                     target = "_blank",
-                    .noWS = "outside"),
+                    .noWS = "after"),
+                  ", e-mail address:",
+                  a("fweber144@protonmail.com",
+                    href = "mailto:fweber144@protonmail.com",
+                    .noWS = "after"),
                   ")"),
           tags$li(strong("Version:"),
-                  "1.2.1"),
-          tags$li(strong("Date (yyyy-mm-dd):"),
-                  "2020-06-25"),
+                  "1.3.0"),
+          tags$li(strong("Date:"),
+                  "August 5, 2020"),
           tags$li(strong("License:"),
                   a("GPL-3", href = "https://CRAN.R-project.org/web/licenses/GPL-3", target = "_blank")),
           tags$li(strong("Citation:"),
                   "Frank Weber (2020).",
-                  em("shinybrms: Graphical User Interface (Shiny App)",
+                  em("shinybrms: Graphical User Interface ('Shiny' App)",
                      "for Package 'brms'."),
-                  "R package, version 1.2.1. URL:",
+                  "R package, version 1.3.0. URL:",
                   a("https://fweber144.github.io/shinybrms/",
                     href = "https://fweber144.github.io/shinybrms/",
-                    target = "_blank"))
-        )
+                    target = "_blank",
+                    .noWS = "after"),
+                  "."),
+          tags$li(strong("Links:"),
+                  a("website", href = "https://fweber144.github.io/shinybrms/", target = "_blank", .noWS = "after"), ",",
+                  a("CRAN", href = "https://CRAN.R-project.org/package=shinybrms", target = "_blank", .noWS = "after"), ",",
+                  a("GitHub", href = "https://github.com/fweber144/shinybrms", target = "_blank"))
+        ),
+        "If you need help, if you want to suggest improvements, or if you found",
+        "a bug, please open an issue on",
+        a("GitHub", href = "https://github.com/fweber144/shinybrms/issues", target = "_blank", .noWS = "after"),
+        "."
       ),
       wellPanel(
         h3("Trademarks"),
@@ -625,8 +908,20 @@ ui <- navbarPage(
               target = "_blank"),
             "."
           ))),
+          tags$li("Windows is a registered trademark of Microsoft Corporation in the United States and other countries."),
           tags$li("Firefox is a trademark of the Mozilla Foundation in the U.S. and other countries.")
         )
+      ),
+      wellPanel(
+        h3("Further legal information"),
+        "shinybrms  Copyright (C) 2020  Frank Weber",
+        br(),
+        "This program comes with ABSOLUTELY NO WARRANTY; for details see the license linked under",
+        "\"Basic information\" above.",
+        br(),
+        "This is free software, and you are welcome to redistribute it",
+        "under certain conditions; see the license linked under",
+        "\"Basic information\" above for details."
       )
     ),
     tabPanel(
@@ -634,10 +929,15 @@ ui <- navbarPage(
       titlePanel("Links"),
       br(),
       wellPanel(
-        h3("Software (without R packages)"),
+        h3("Programming languages and software environments"),
         tags$ul(
           tags$li(a("R", href = "https://www.R-project.org/", target = "_blank")),
-          tags$li(a("Stan", href = "https://mc-stan.org/", target = "_blank"))
+          tags$li(a("Stan", href = "https://mc-stan.org/", target = "_blank")),
+          tags$li(a("Shiny", href = "https://shiny.rstudio.com/", target = "_blank"),
+                  "(seen as an own",
+                  "software entity,", # "\"software environment\",", # "\"programming language\",", # "\"software concept\",", 
+                  "even though it is actually implemented",
+                  "in the R package", strong("shiny"), "(see below))")
         )
       ),
       wellPanel(
@@ -645,58 +945,76 @@ ui <- navbarPage(
         tags$ul(
           tags$li(HTML(paste0(
             strong("shinybrms"), ": ",
-            a("GitHub", href = "https://github.com/fweber144/shinybrms", target = "_blank"), ", ",
+            a("website", href = "https://fweber144.github.io/shinybrms/", target = "_blank"), ", ",
             a("CRAN", href = "https://CRAN.R-project.org/package=shinybrms", target = "_blank"), ", ",
-            a("website", href = "https://fweber144.github.io/shinybrms/", target = "_blank")
+            a("GitHub", href = "https://github.com/fweber144/shinybrms", target = "_blank")
           ))),
           tags$li(HTML(paste0(
             strong("brms"), ": ",
-            a("GitHub", href = "https://github.com/paul-buerkner/brms", target = "_blank"), ", ",
-            a("CRAN", href = "https://CRAN.R-project.org/package=brms", target = "_blank")
+            a("website", href = "https://paul-buerkner.github.io/brms/", target = "_blank"), ", ",
+            a("CRAN", href = "https://CRAN.R-project.org/package=brms", target = "_blank"), ", ",
+            a("GitHub", href = "https://github.com/paul-buerkner/brms", target = "_blank")
           ))),
           tags$li(HTML(paste0(
             strong("rstan"), ": ",
-            a("GitHub", href = "https://github.com/stan-dev/rstan/", target = "_blank"), ", ",
-            a("CRAN", href = "https://CRAN.R-project.org/package=rstan", target = "_blank")
+            a("website", href = "https://mc-stan.org/rstan/", target = "_blank"), ", ",
+            a("CRAN", href = "https://CRAN.R-project.org/package=rstan", target = "_blank"), ", ",
+            a("GitHub", href = "https://github.com/stan-dev/rstan/", target = "_blank")
           ))),
           tags$li(HTML(paste0(
             strong("shinystan"), ": ",
-            a("GitHub", href = "https://github.com/stan-dev/shinystan/", target = "_blank"), ", ",
-            a("CRAN", href = "https://CRAN.R-project.org/package=shinystan", target = "_blank")
+            a("website", href = "https://mc-stan.org/shinystan/", target = "_blank"), ", ",
+            a("CRAN", href = "https://CRAN.R-project.org/package=shinystan", target = "_blank"), ", ",
+            a("GitHub", href = "https://github.com/stan-dev/shinystan/", target = "_blank")
+          ))),
+          tags$li(HTML(paste0(
+            strong("lme4"), ": ",
+            a("CRAN", href = "https://CRAN.R-project.org/package=lme4", target = "_blank"), ", ",
+            a("GitHub", href = "https://github.com/lme4/lme4/", target = "_blank")
+          ))),
+          tags$li(HTML(paste0(
+            strong("MASS"), ": ",
+            a("CRAN", href = "https://CRAN.R-project.org/package=MASS", target = "_blank")
+          ))),
+          tags$li(HTML(paste0(
+            strong("rstanarm"), ": ",
+            a("website", href = "https://mc-stan.org/rstanarm/", target = "_blank"), ", ",
+            a("CRAN", href = "https://CRAN.R-project.org/package=rstanarm", target = "_blank"), ", ",
+            a("GitHub", href = "https://github.com/stan-dev/rstanarm/", target = "_blank")
+          ))),
+          tags$li(HTML(paste0(
+            strong("shiny"), ": ",
+            a("website", href = "https://shiny.rstudio.com/", target = "_blank"), ", ",
+            a("CRAN", href = "https://CRAN.R-project.org/package=shiny", target = "_blank"), ", ",
+            a("GitHub", href = "https://github.com/rstudio/shiny", target = "_blank")
           )))
         )
       )
     ),
     tabPanel(
-      "Help",
-      titlePanel("Help"),
+      "References",
+      titlePanel("References"),
       br(),
-      wellPanel(
-        h3("Software"),
-        HTML(paste0("For help concerning the software used in the ", strong("shinybrms"), " app ",
-                    "(including the R package ", strong("shinybrms"), "), see ",
-                    "the \"More\" &rarr; \"Links\" page."))
-      ),
-      wellPanel(
-        h3("Literature"),
-        "These are helpful textbooks on Bayesian statistics:",
-        tags$ul(
-          tags$li("Introductory:",
-                  tags$ul(
-                    tags$li("McElreath, R. (2016).",
-                            em("Statistical Rethinking: A Bayesian Course with Examples in R and Stan"),
-                            "(1st ed.",
-                            em("[Note that there is also a second edition available.]"),
-                            "). CRC Press.")
-                  )),
-          tags$li("Introductory to more advanced:",
-                  tags$ul(
-                    tags$li("Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., & Rubin, D. B. (2014).",
-                            em("Bayesian Data Analysis"),
-                            "(3rd ed.). CRC Press.")
-                  ))
-        )
-      )
+      p("Betancourt M (2017).",
+        "A conceptual introduction to Hamiltonian Monte Carlo.",
+        em("arXiv:170102434 [stat]", .noWS = "after"), ". URL:",
+        a("https://arxiv.org/abs/1701.02434",
+          href = "https://arxiv.org/abs/1701.02434",
+          target = "_blank"),
+        "(visited on July 26, 2020)."),
+      p("Gelman A, Carlin JB, Stern HS, Dunson DB, Vehtari A, and Rubin DB (2014).",
+        em("Bayesian Data Analysis", .noWS = "after"),
+        ". 3rd ed. Boca Raton, FL: CRC Press."),
+      p("McElreath R (2020).",
+        em("Statistical Rethinking: A Bayesian Course with Examples in R and Stan", .noWS = "after"),
+        ". 2nd ed. Boca Raton, FL: CRC Press."),
+      p(withMathJax(
+        "Vehtari A, Gelman A, Simpson D, Carpenter B, and Bürkner P-C (2020).",
+        "Rank-normalization, folding, and localization: An improved \\(\\widehat{R}\\) for",
+        "assessing convergence of MCMC.", em("Bayesian Analysis", .noWS = "after"), ". DOI:",
+        a("10.1214/20-BA1221", href = "https://doi.org/10.1214/20-BA1221", target = "_blank",
+          .noWS = "after"),
+        "."))
     )
   ),
   tabPanel(title = "Quit", value = "quit_app", icon = icon("power-off"))
@@ -834,6 +1152,29 @@ server <- function(input, output, session){
         )
         req(FALSE)
       }
+    } else if(identical(input$ex_da_sel, "roaches")){
+      if(requireNamespace("rstanarm", quietly = TRUE)){
+        tmp_env <- new.env()
+        data(roaches, package = "rstanarm", envir = tmp_env)
+        assign("roaches", within(get("roaches", envir = tmp_env), {
+          # Code from
+          # https://avehtari.github.io/modelselection/roaches.html
+          # and
+          # https://mc-stan.org/rstanarm/articles/count.html
+          # but slightly modified:
+          exposure2_log <- log(exposure2)
+          roach1_scaledBy0.01 <- 0.01 * roach1
+          roach1_sqrt <- sqrt(roach1)
+        }), envir = tmp_env)
+        return(get("roaches", envir = tmp_env))
+      } else{
+        showNotification(
+          "Package \"rstanarm\" needed. Please install it.",
+          duration = NA,
+          type = "error"
+        )
+        req(FALSE)
+      }
     } else if(identical(input$ex_da_sel, "sleepstudy")){
       if(requireNamespace("lme4", quietly = TRUE)){
         tmp_env <- new.env()
@@ -867,7 +1208,7 @@ server <- function(input, output, session){
     }
   })
   
-  #-------------------------------------------------
+  #------------------------
   # Data preview
   
   output$da_view <- renderTable({
@@ -883,7 +1224,7 @@ server <- function(input, output, session){
   })
   
   #-------------------------------------------------
-  # Outcome
+  # Likelihood
   
   #------------------------
   # Outcome
@@ -897,12 +1238,12 @@ server <- function(input, output, session){
     updateSelectInput(session, "outc_sel",
                       choices = c("Choose outcome ..." = "",
                                   setdiff(names(da()),
-                                          c(input$pred_mainNV_sel,
-                                            input$pred_mainV_sel))),
+                                          c(input$pred_mainNP_sel,
+                                            input$pred_mainPP_sel))),
                       selected = isolate(input$outc_sel))
   })
   
-  #------------------------
+  #------------
   # Distributional family
   
   C_family <- reactive({
@@ -934,41 +1275,41 @@ server <- function(input, output, session){
     }
   })
   
-  #-------------------------------------------------
+  #------------------------
   # Predictors
   
-  #------------------------
+  #------------
   # Main effects
   
   observe({
     if(inherits(try(da(), silent = TRUE), "try-error")){
-      updateSelectInput(session, "pred_mainNV_sel",
-                        choices = c("Choose variables for nonvarying main effects ..." = ""))
+      updateSelectInput(session, "pred_mainNP_sel",
+                        choices = c("Choose variables for nonpooled main effects ..." = ""))
       return()
     }
-    updateSelectInput(session, "pred_mainNV_sel",
-                      choices = c("Choose variables for nonvarying main effects ..." = "",
+    updateSelectInput(session, "pred_mainNP_sel",
+                      choices = c("Choose variables for nonpooled main effects ..." = "",
                                   setdiff(names(da()),
                                           c(input$outc_sel,
-                                            input$pred_mainV_sel))),
-                      selected = isolate(input$pred_mainNV_sel))
+                                            input$pred_mainPP_sel))),
+                      selected = isolate(input$pred_mainNP_sel))
   })
   
   observe({
     if(inherits(try(da(), silent = TRUE), "try-error")){
-      updateSelectInput(session, "pred_mainV_sel",
-                        choices = c("Choose variables for varying intercepts ..." = ""))
+      updateSelectInput(session, "pred_mainPP_sel",
+                        choices = c("Choose variables for partially pooled main effects ..." = ""))
       return()
     }
-    updateSelectInput(session, "pred_mainV_sel",
-                      choices = c("Choose variables for varying intercepts ..." = "",
+    updateSelectInput(session, "pred_mainPP_sel",
+                      choices = c("Choose variables for partially pooled main effects ..." = "",
                                   setdiff(names(da()),
                                           c(input$outc_sel,
-                                            input$pred_mainNV_sel))),
-                      selected = isolate(input$pred_mainV_sel))
+                                            input$pred_mainNP_sel))),
+                      selected = isolate(input$pred_mainPP_sel))
   })
   
-  #------------------------
+  #------------
   # Interactions
   
   observe({
@@ -979,8 +1320,8 @@ server <- function(input, output, session){
     }
     updateSelectInput(session, "pred_int_build",
                       choices = c("Choose variables for an interaction term ..." = "",
-                                  input$pred_mainNV_sel,
-                                  input$pred_mainV_sel),
+                                  input$pred_mainNP_sel,
+                                  input$pred_mainPP_sel),
                       selected = isolate(input$pred_int_build))
   })
   
@@ -997,20 +1338,20 @@ server <- function(input, output, session){
                                      paste(input$pred_int_build, collapse = "<-->")))
       updateSelectInput(session, "pred_int_build",
                         choices = c("Choose variables for an interaction term ..." = "",
-                                    input$pred_mainNV_sel,
-                                    input$pred_mainV_sel))
+                                    input$pred_mainNP_sel,
+                                    input$pred_mainPP_sel))
     }
   })
   
   # Ensure that all variables involved in the interaction terms have a main effect (either
-  # nonvarying or varying):
+  # nonpooled or partially pooled):
   observeEvent({
-    input$pred_mainNV_sel
-    input$pred_mainV_sel
+    input$pred_mainNP_sel
+    input$pred_mainPP_sel
   }, {
     pred_int_keep <- sapply(pred_int_rv$choices, function(x){
-      all(x %in% c(input$pred_mainNV_sel,
-                   input$pred_mainV_sel))
+      all(x %in% c(input$pred_mainNP_sel,
+                   input$pred_mainPP_sel))
     })
     if(any(pred_int_keep)){
       pred_int_rv$choices <- pred_int_rv$choices[pred_int_keep]
@@ -1027,42 +1368,42 @@ server <- function(input, output, session){
     }
   }, ignoreNULL = FALSE)
   
-  #------------------------
+  #------------
   # Combination of all predictor terms
   
   C_pred <- reactive({
-    if(is.null(input$pred_mainNV_sel) && is.null(input$pred_mainV_sel)){
-      return(data.frame("from_mainV" = factor(NA_character_, levels = NA_character_, exclude = NULL),
-                        "from_mainNV" = "1"))
+    if(is.null(input$pred_mainNP_sel) && is.null(input$pred_mainPP_sel)){
+      return(data.frame("from_mainPP" = factor(NA_character_, levels = NA_character_, exclude = NULL),
+                        "from_mainNP" = "1"))
     }
     
     pred_lst <- c(
-      as.list(input$pred_mainNV_sel),
-      as.list(input$pred_mainV_sel),
+      as.list(input$pred_mainNP_sel),
+      as.list(input$pred_mainPP_sel),
       pred_int_rv$choices[pred_int_rv$choices_chr %in% input$pred_int_sel]
     )
     if(length(input$pred_int_sel) > 0L){
       # Perform the following tasks (at the same time):
       #   - Expand interactions on the group-level side (in principle, this is not necessary as the
       #     "*" syntax (<predictor_1>*<predictor_2>) also works on the group-level side; however, for
-      #     including correlations between the varying effects of a specific group-level term, the
-      #     terms on the population-level side need to be grouped by the term on the group-level side)
-      #   - For varying effects, add the corresponding nonvarying effects since the varying effects
-      #     are assumed to have mean zero.
+      #     including correlations between the partially pooled effects of a specific group-level term, the
+      #     terms on the population-level side need to be grouped by the term on the group-level side).
+      #   - For partially pooled slopes, add the corresponding nonpooled slopes since the partially pooled 
+      #     slopes are assumed to have mean zero.
       # The first task is performed by applying combn() to m = 1L, ..., length(x_V) with "x_V"
       # containing the group-level terms of a given element of "pred_lst".
       # The second task is performed by additionally applying combn() to m = 0L when performing
       # the first task.
       pred_needsExpand <- sapply(pred_lst, function(x){
-        sum(x %in% input$pred_mainV_sel) > 0L
+        sum(x %in% input$pred_mainPP_sel) > 0L
       })
       if(any(pred_needsExpand)){ # This if() condition is not necessary, but included for better readability.
         pred_lst_toExpand <- pred_lst[pred_needsExpand]
         pred_lst_expanded <- do.call("c", lapply(pred_lst_toExpand, function(x){
-          x_V <- intersect(x, input$pred_mainV_sel)
+          x_V <- intersect(x, input$pred_mainPP_sel)
           x_V_lst_expanded <- unlist(lapply(c(0L, seq_along(x_V)), combn, x = x_V, simplify = FALSE),
                                      recursive = FALSE)
-          x_NV <- intersect(x, input$pred_mainNV_sel)
+          x_NV <- intersect(x, input$pred_mainNP_sel)
           lapply(x_V_lst_expanded, "c", x_NV)
         }))
         pred_lst <- c(pred_lst[!pred_needsExpand],
@@ -1075,7 +1416,7 @@ server <- function(input, output, session){
       # By group-level term: Check each population-level term for being a "subterm" (lower-order
       # term) of a high-order term and if yes, remove it:
       pred_vec_chr <- sapply(pred_lst, function(x){
-        x_V <- intersect(x, input$pred_mainV_sel)
+        x_V <- intersect(x, input$pred_mainPP_sel)
         if(length(x_V) > 0L){
           return(paste(x_V, collapse = "<-->"))
         } else{
@@ -1084,7 +1425,7 @@ server <- function(input, output, session){
       })
       pred_vec_chr <- factor(pred_vec_chr, levels = unique(pred_vec_chr), exclude = NULL)
       pred_lst <- tapply(pred_lst, pred_vec_chr, function(x_lst){
-        x_NV_lst <- lapply(x_lst, intersect, y = input$pred_mainNV_sel)
+        x_NV_lst <- lapply(x_lst, intersect, y = input$pred_mainNP_sel)
         x_isSubNV <- sapply(seq_along(x_NV_lst), function(idx){
           any(sapply(x_NV_lst[-idx], function(x_NV){
             all(x_NV_lst[[idx]] %in% x_NV)
@@ -1096,50 +1437,50 @@ server <- function(input, output, session){
     }
     
     pred_DF <- do.call("rbind", lapply(pred_lst, function(x){
-      x_NV <- intersect(x, input$pred_mainNV_sel)
+      x_NV <- intersect(x, input$pred_mainNP_sel)
       if(length(x_NV) > 0L){
         x_NV <- paste(x_NV, collapse = "*")
       } else{
         x_NV <- NA_character_
       }
-      x_V <- intersect(x, input$pred_mainV_sel)
+      x_V <- intersect(x, input$pred_mainPP_sel)
       if(length(x_V) > 0L){
         x_V <- paste(x_V, collapse = ":")
       } else{
         x_V <- NA_character_
       }
-      data.frame("from_mainNV" = x_NV,
-                 "from_mainV" = x_V)
+      data.frame("from_mainNP" = x_NV,
+                 "from_mainPP" = x_V)
     }))
-    pred_DF$from_mainV <- factor(pred_DF$from_mainV, levels = unique(pred_DF$from_mainV), exclude = NULL)
-    pred_DF <- aggregate(from_mainNV ~ from_mainV, pred_DF, function(x){
+    pred_DF$from_mainPP <- factor(pred_DF$from_mainPP, levels = unique(pred_DF$from_mainPP), exclude = NULL)
+    pred_DF <- aggregate(from_mainNP ~ from_mainPP, pred_DF, function(x){
       paste(c("1", x[!is.na(x)]), collapse = " + ")
     }, na.action = na.pass)
     return(pred_DF)
   })
   
-  #------------------------
+  #------------
   # Predictor terms preview
   
   output$pred_view <- renderTable({
     C_pred()
   }, sanitize.colnames.function = function(x){
-    x <- sub("^from_mainNV$", "Population-level effects", x)
-    x <- sub("^from_mainV$", "Group-level effects", x)
+    x <- sub("^from_mainNP$", "Effect(s)", x)
+    x <- sub("^from_mainPP$", "Group", x)
     return(x)
   })
   
   #------------------------
-  # Formula construction
+  # Formula
   
   C_formula_char <- reactive({
     req(input$outc_sel)
     
     formula_splitted <- apply(C_pred(), 1, function(x){
-      if(is.na(x["from_mainV"])){
-        return(x["from_mainNV"])
+      if(is.na(x["from_mainPP"])){
+        return(x["from_mainNP"])
       } else{
-        return(paste0("(", x["from_mainNV"], " | ", x["from_mainV"], ")"))
+        return(paste0("(", x["from_mainNP"], " | ", x["from_mainPP"], ")"))
       }
     })
     return(paste(
@@ -1153,9 +1494,6 @@ server <- function(input, output, session){
     req(C_formula_char())
     return(as.formula(C_formula_char()))
   })
-  
-  #------------------------
-  # Formula preview
   
   output$formula_view <- renderText({
     C_formula_char()
@@ -1171,20 +1509,17 @@ server <- function(input, output, session){
   
   # Get default priors:
   C_prior_default <- reactive({
-    if(inherits(try(C_formula(), silent = TRUE), "try-error") ||
-       inherits(try(C_family(), silent = TRUE), "try-error")){
-      return(brms::empty_prior())
-    }
-    req(all(c(input$pred_mainNV_sel,
-              input$pred_mainV_sel) %in% names(da())))
-    
     warn_orig <- options(warn = 1)
     warn_capt <- capture.output({
-      C_prior_default_tmp <- brms::get_prior(formula = C_formula(),
-                                             data = da(),
-                                             family = C_family())
+      C_prior_default_tmp <- try(brms::get_prior(formula = C_formula(),
+                                                 data = da(),
+                                                 family = C_family()),
+                                 silent = TRUE)
     }, type = "message")
     options(warn = warn_orig$warn)
+    if(inherits(C_prior_default_tmp, "try-error")){
+      return(brms::empty_prior())
+    }
     if(length(warn_capt) > 0L){
       warn_capt <- unique(warn_capt)
       if(identical(warn_capt, "Warning: Rows containing NAs were excluded from the model.")){
@@ -1301,6 +1636,9 @@ server <- function(input, output, session){
   # Posterior
   
   #------------------------
+  # Run Stan
+  
+  #------------
   # Stan code
   
   C_stancode <- reactive({
@@ -1344,7 +1682,7 @@ server <- function(input, output, session){
     }
   )
   
-  #------------------------
+  #------------
   # Stan data
   
   C_standata <- reactive({
@@ -1388,10 +1726,10 @@ server <- function(input, output, session){
     }
   )
   
-  #------------------------
+  #------------
   # Run Stan
   
-  C_fit <- eventReactive(input$run_stan, {
+  C_stanres <- eventReactive(input$run_stan, {
     req(C_formula(), C_family(),
         input$advOpts_cores,
         input$advOpts_chains,
@@ -1400,12 +1738,14 @@ server <- function(input, output, session){
         input$advOpts_init_r,
         input$advOpts_adapt_delta,
         input$advOpts_max_treedepth)
+    
+    n_chains_spec <- input$advOpts_chains
+    
     args_brm <- list(
       formula = C_formula(),
       data = da(),
       family = C_family(),
       prior = C_prior_rv$prior_set_obj,
-      ## Arguments which are preset by design of the UI:
       cores = min(input$advOpts_cores, input$advOpts_chains),
       chains = input$advOpts_chains,
       seed = input$advOpts_seed,
@@ -1417,12 +1757,7 @@ server <- function(input, output, session){
       save_all_pars = input$advOpts_save_all_pars,
       save_warmup = input$advOpts_save_warmup,
       control = list(adapt_delta = input$advOpts_adapt_delta,
-                     max_treedepth = input$advOpts_max_treedepth),
-      ##
-      ## Arguments which are fixed to a certain value:
-      silent = TRUE,
-      verbose = FALSE
-      ##
+                     max_treedepth = input$advOpts_max_treedepth)
     )
     if(!is.na(input$advOpts_warmup)){
       args_brm <- c(args_brm,
@@ -1434,8 +1769,8 @@ server <- function(input, output, session){
     }
     
     showNotification(
-      paste("Stan is about to start sampling. Note that the C++ code needs to be compiled first",
-            "and this may take a while."),
+      paste("Stan will now compile the C++ code for your model (which may take a while) and",
+            "will then start sampling."),
       duration = 60,
       type = "message"
     )
@@ -1471,7 +1806,7 @@ server <- function(input, output, session){
           sink(tmp_stdout_txt)
           sink_active <- TRUE
           cat("Refresh this page to see the sampling progress.",
-              "Note that the C++ code needs to be compiled first and this may take",
+              "Note that the C++ code needs to be compiled first, which may take",
               "a while.\n")
           tmp_stdout_html <- sub("\\.txt$", ".html", tmp_stdout_txt)
           rstan:::create_progress_html_file(tmp_stdout_html, tmp_stdout_txt)
@@ -1488,7 +1823,7 @@ server <- function(input, output, session){
     
     # Run Stan (more precisely: brms::brm()):
     warn_capt <- capture.output({
-      C_fit_tmp <- do.call(brms::brm, args = args_brm)
+      C_bfit <- do.call(brms::brm, args = args_brm)
     }, type = "message")
     
     # Reset all modified options and environment variables:
@@ -1497,60 +1832,234 @@ server <- function(input, output, session){
     if(exists("browser_orig")) options(browser = browser_orig$browser)
     if(!identical(Sys.getenv("RSTUDIO"), RSTUDIO_orig)) Sys.setenv("RSTUDIO" = RSTUDIO_orig)
     
-    # Throw warnings if existing:
+    # Notifications for the warnings thrown by the call to brms::brm():
     if(length(warn_capt) > 0L){
       warn_capt <- unique(warn_capt)
-      if(identical(warn_capt, "Warning: Rows containing NAs were excluded from the model.")){
+      warn_capt[warn_capt == "Warning: Rows containing NAs were excluded from the model."] <- 
+        paste("Warning: There are missing values in the data which was used for the model.",
+              "The corresponding rows have been omitted in the Stan run.")
+      warn_capt <- setdiff(warn_capt, "Compiling Stan program...")
+      for(warn_capt_i in warn_capt){
         showNotification(
-          paste("Warning: There are missing values in the data. The corresponding rows have been",
-                "omitted in the Stan run."),
-          duration = NA,
-          type = "warning"
-        )
-      } else{
-        showNotification(
-          paste(warn_capt, collapse = " | "),
+          warn_capt_i,
           duration = NA,
           type = "warning"
         )
       }
     }
-    return(C_fit_tmp)
+    
+    C_draws_arr <- as.array(C_bfit)
+    n_chains_out <- dim(C_draws_arr)[2]
+    # Check that the mode of the resulting "stanfit" object is the "normal" mode (0L), i.e. neither
+    # test gradient mode (1L) nor error mode (2L):
+    stopifnot(identical(C_bfit$fit@mode, 0L))
+    
+    #------
+    # Computation of MCMC diagnostics
+    
+    #---
+    # HMC-specific diagnostics
+    
+    C_div <- rstan::get_num_divergent(C_bfit$fit)
+    C_div_OK <- identical(C_div, 0L)
+    
+    C_tree <- rstan::get_num_max_treedepth(C_bfit$fit)
+    C_tree_OK <- identical(C_tree, 0L)
+    
+    C_EBFMI <- setNames(rstan::get_bfmi(C_bfit$fit),
+                        paste0("chain_", sapply(C_bfit$fit@stan_args, "[[", "chain_id")))
+    C_EBFMI_OK <- all(C_EBFMI >= 0.2)
+    
+    #---
+    # General MCMC diagnostics
+    
+    C_essBulk <- apply(C_draws_arr, MARGIN = 3, FUN = rstan::ess_bulk)
+    if(any(is.na(C_essBulk))){
+      C_essBulk_OK <- FALSE
+    } else{
+      C_essBulk_OK <- all(C_essBulk > 100 * n_chains_out)
+    }
+    
+    C_rhat <- apply(C_draws_arr, MARGIN = 3, FUN = rstan::Rhat)
+    if(any(is.na(C_rhat))){
+      C_rhat_OK <- FALSE
+    } else{
+      C_rhat_OK <- all(C_rhat < 1.01)
+    }
+    
+    C_essTail <- apply(C_draws_arr, MARGIN = 3, FUN = rstan::ess_tail)
+    if(any(is.na(C_essTail))){
+      C_essTail_OK <- FALSE
+    } else{
+      C_essTail_OK <- all(C_essTail > 100 * n_chains_out)
+    }
+    
+    #---
+    # Overall check for all MCMC diagnostics
+    
+    C_all_OK <- all(c(C_div_OK, C_tree_OK, C_EBFMI_OK, 
+                      C_essBulk_OK, C_rhat_OK, C_essTail_OK))
+    
+    #---
+    # Notifications for the MCMC diagnostics
+    
+    # First: Check for failed chains:
+    if(n_chains_out < n_chains_spec){
+      showNotification(
+        paste("Warning: The Stan run was finished, but at least one chain exited with an error.",
+              "The Stan results should not be used."),
+        duration = NA,
+        type = "warning"
+      )
+    } else{
+      # Secondly: Overall check for all MCMC diagnostics:
+      if(C_all_OK){
+        showNotification(
+          paste("The Stan run was finished. All MCMC diagnostics are OK (see",
+                "the tab \"MCMC diagnostics\" for details)."),
+          duration = NA,
+          type = "message"
+        )
+      } else{
+        showNotification(
+          paste("Warning: The Stan run was finished, but at least one MCMC diagnostic is worrying (see",
+                "the tab \"MCMC diagnostics\" for details). In general,",
+                "this indicates that the Stan results should not be used."),
+          duration = NA,
+          type = "warning"
+        )
+      }
+    }
+    
+    return(list(bfit = C_bfit,
+                diagn = list(all_OK = C_all_OK,
+                             divergences_OK = C_div_OK,
+                             divergences = C_div,
+                             hits_max_tree_depth_OK = C_tree_OK,
+                             hits_max_tree_depth = C_tree,
+                             EBFMI_OK = C_EBFMI_OK,
+                             EBFMI = C_EBFMI,
+                             Rhat_OK = C_rhat_OK,
+                             Rhat = C_rhat,
+                             ESS_bulk_OK = C_essBulk_OK,
+                             ESS_bulk = C_essBulk,
+                             ESS_tail_OK = C_essTail_OK,
+                             ESS_tail = C_essTail),
+                draws_arr = C_draws_arr))
+  })
+  
+  #------
+  # Date and time when Stan run was finished
+  
+  output$fit_date <- renderText({
+    C_stanres()$bfit$fit@date
+  })
+  
+  #------
+  # Overall check for all MCMC diagnostics
+  
+  output$diagn_all_out <- renderText({
+    if(C_stanres()$diagn$all_OK){
+      return(paste("All MCMC diagnostics are OK (see",
+                   "the tab \"MCMC diagnostics\" for details)."))
+    } else{
+      return(paste("Warning: At least one MCMC diagnostic is worrying (see",
+                   "the tab \"MCMC diagnostics\" for details). In general,",
+                   "this indicates that the Stan results should not be used."))
+    }
+  }, sep = "\n")
+  
+  #------------------------
+  # MCMC diagnostics
+  
+  #------------
+  # HMC-specific diagnostics
+  
+  output$diagn_div_out <- renderText({
+    div_text <- paste0("The number of iterations ending with a divergence (",
+                       C_stanres()$diagn$divergences,
+                       ")")
+    if(C_stanres()$diagn$divergences_OK){
+      return(paste(div_text, "is OK."))
+    } else{
+      return(paste("Warning:", div_text, "is worrying. In general,",
+                   "this indicates that the Stan results should not be used."))
+    }
+  }, sep = "\n")
+  
+  output$diagn_tree_out <- renderText({
+    tree_text <- paste0("The number of iterations hitting the maximum tree depth (",
+                        C_stanres()$diagn$hits_max_tree_depth,
+                        ")")
+    if(C_stanres()$diagn$hits_max_tree_depth_OK){
+      return(paste(tree_text, "is OK."))
+    } else{
+      return(paste("Warning:", tree_text, "is worrying. In general,",
+                   "this indicates that the Stan results should not be used."))
+    }
+  }, sep = "\n")
+  
+  output$diagn_EBFMI_out <- renderText({
+    EBFMI_text <- paste0("The E-BFMI (",
+                         paste(paste0(names(C_stanres()$diagn$EBFMI),
+                                      ": ",
+                                      round(C_stanres()$diagn$EBFMI, 4)),
+                               collapse = ", "),
+                         ")")
+    if(C_stanres()$diagn$EBFMI_OK){
+      return(paste(EBFMI_text, "is OK."))
+    } else{
+      return(paste("Warning:", EBFMI_text, "is worrying. In general,",
+                   "this indicates that the Stan results should not be used."))
+    }
+  }, sep = "\n")
+  
+  #------------
+  # General MCMC diagnostics
+  
+  output$rhat_out <- renderText({
+    if(C_stanres()$diagn$Rhat_OK){
+      return("All R-hat values are OK.")
+    } else{
+      return(paste("Warning: At least one R-hat value is worrying. In general,",
+                   "this indicates that the Stan results should not be used."))
+    }
+  }, sep = "\n")
+  
+  output$essBulk_out <- renderText({
+    if(C_stanres()$diagn$ESS_bulk_OK){
+      return("All bulk-ESS values are OK.")
+    } else{
+      return(paste("Warning: At least one bulk-ESS value is worrying. In general,",
+                   "this indicates that the Stan results should not be used."))
+    }
+  }, sep = "\n")
+  
+  output$essTail_out <- renderText({
+    if(C_stanres()$diagn$ESS_tail_OK){
+      return("All tail-ESS values are OK.")
+    } else{
+      return(paste("Warning: At least one tail-ESS value is worrying. In general,",
+                   "this indicates that the Stan results should not be used."))
+    }
+  }, sep = "\n")
+  
+  output$general_MCMC_out <- renderPrint({
+    data.frame("R-hat" = C_stanres()$diagn$Rhat,
+               "ESS_bulk" = C_stanres()$diagn$ESS_bulk,
+               "ESS_tail" = C_stanres()$diagn$ESS_tail,
+               check.names = FALSE)
   })
   
   #------------------------
-  # Output
-  
-  output$fit_date <- renderText({
-    invisible(req(C_fit()))
-    C_fit()$fit@date
-  })
-  
-  output$diagn_div <- renderText({
-    invisible(req(C_fit()))
-    capture.output({
-      rstan::check_divergences(C_fit()$fit)
-    }, type = "message")
-  }, sep = "\n")
-  
-  output$diagn_tree <- renderText({
-    invisible(req(C_fit()))
-    capture.output({
-      rstan::check_treedepth(C_fit()$fit)
-    }, type = "message")
-  }, sep = "\n")
-  
-  output$diagn_energy <- renderText({
-    invisible(req(C_fit()))
-    capture.output({
-      rstan::check_energy(C_fit()$fit)
-    }, type = "message")
-  }, sep = "\n")
+  # Summary
   
   output$smmry_view <- renderPrint({
-    invisible(req(C_fit()))
-    print(C_fit(), digits = 2, priors = TRUE, prob = 0.95, mc_se = FALSE)
+    print(C_stanres()$bfit, digits = 2, priors = TRUE, prob = 0.95, mc_se = FALSE)
   })
+  
+  #------------------------
+  # Download
   
   output$stanout_download <- downloadHandler(
     filename = function(){
@@ -1559,6 +2068,7 @@ server <- function(input, output, session){
       } else{
         return(paste0(switch(input$stanout_download_sel,
                              "brmsfit_obj" = "shinybrms_brmsfit",
+                             "diagn_obj" = "shinybrms_MCMC_diagnostics",
                              "draws_mat_obj" = "shinybrms_post_draws_mat",
                              "draws_arr_obj" = "shinybrms_post_draws_arr"),
                       ".rds"))
@@ -1566,21 +2076,25 @@ server <- function(input, output, session){
     },
     content = function(file){
       if(identical(input$stanout_download_sel, "draws_mat_csv")){
-        write.csv(as.matrix(C_fit()),
+        write.csv(as.matrix(C_stanres()$bfit),
                   file = file,
                   row.names = FALSE)
       } else{
         saveRDS(switch(input$stanout_download_sel,
-                       "brmsfit_obj" = C_fit(),
-                       "draws_mat_obj" = as.matrix(C_fit()),
-                       "draws_arr_obj" = as.array(C_fit())),
+                       "brmsfit_obj" = C_stanres()$bfit,
+                       "diagn_obj" = C_stanres()$diagn,
+                       "draws_mat_obj" = as.matrix(C_stanres()$bfit),
+                       "draws_arr_obj" = C_stanres()$draws_arr),
                 file = file)
       }
     }
   )
   
+  #------------------------
+  # shinystan
+  
   observeEvent(input$act_launch_shinystan, {
-    invisible(req(C_fit()))
+    invisible(req(C_stanres()))
     if(requireNamespace("shinystan", quietly = TRUE)){
       if(requireNamespace("callr", quietly = TRUE)){
         # The browser for "shinystan":
@@ -1618,7 +2132,7 @@ server <- function(input, output, session){
             options(browser = browser_callr_orig$browser)
             return(invisible(TRUE))
           },
-          args = list(brmsfit_obj = C_fit(),
+          args = list(brmsfit_obj = C_stanres()$bfit,
                       browser_callr = shinystan_browser,
                       seed_callr = seed_PPD_tmp)
         )
@@ -1638,7 +2152,7 @@ server <- function(input, output, session){
     }
   })
   
-  #------------------------
+  #-------------------------------------------------
   # Quit app
   
   observe({
