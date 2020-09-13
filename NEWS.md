@@ -1,4 +1,49 @@
-# shinybrms 1.3.0
+# **shinybrms** 1.4.0
+
+## Major changes
+
+  - A new theme is used for the **shinybrms** app. This theme is
+    basically the "United" theme from
+    [Bootswatch](https://github.com/thomaspark/bootswatch) v3.3.7 with
+    just a few minor modifications. For the font, the "Open Sans" font
+    from [Google Fonts](https://fonts.google.com/) is used. See the new
+    file "LICENSE" for details concerning the licenses of these new
+    components.
+
+## Minor changes
+
+  - When deselecting a variable from the list for the nonpooled main
+    effects or deselecting a variable from the list for the partially
+    pooled main effects, the interactions involving this variable are
+    now reduced to the corresponding lower-order interactions (instead
+    of being simply removed).
+  - When updating the selections for the class or the coefficient of
+    a custom prior, the former value is now selected if it exists
+    among the new choices.
+  - When specifying a custom prior and switching the class or the
+    coefficient, the input field for the group is now only cleared
+    (automatically) if necessary. Before, it was cleared at every change
+    of class or coefficient (provided that the clearing was allowed,
+    meaning that such a combination was present in the table of the
+    default priors).
+  - UI: Minor improvements (e.g. improved button labels and help texts).
+  - On Windows with **rstan** version \>= 2.21.1: Automatically run
+    `rstan::rstan_options("javascript" = FALSE)` at the launch of the
+    **shinybrms** app to prevent occasional crashes of the R session
+    when starting the Stan run.
+  - UI: Added internal links.
+
+## Bug fixes
+
+  - Fixed the bug that when setting the input field "Group" (of a custom
+    prior) to a nonempty value and later switching back to an empty
+    value, the "Group" was empty in the UI, but internally, the former
+    value was kept. This bug was solved by initializing the input field
+    "Group" *with* a choose prompt (which made it necessary to catch
+    impossible combinations of "Class", "Coefficient", and "Group"
+    with a user notification).
+
+# **shinybrms** 1.3.0
 
 ## Major changes
 
@@ -35,7 +80,7 @@
 
   - Fixed a bug when switching the dataset.
 
-# shinybrms 1.2.2 (only GitHub)
+# **shinybrms** 1.2.2 (only GitHub)
 
 ## Minor changes
 
@@ -49,7 +94,7 @@
 
   - Fixed a NOTE occurring in some CRAN checks.
 
-# shinybrms 1.2.1
+# **shinybrms** 1.2.1
 
 ## Minor changes
 
@@ -63,7 +108,7 @@
   - Fixed a bug causing the sampling progress file not to open up if
     RStudio's internal `rs_shinyviewer` was used for option `"browser"`.
 
-# shinybrms 1.2.0 (only GitHub)
+# **shinybrms** 1.2.0 (only GitHub)
 
 ## Major changes
 
@@ -80,7 +125,7 @@
 
   - Fixed a NOTE occurring in some CRAN checks.
 
-# shinybrms 1.1.0
+# **shinybrms** 1.1.0
 
 ## Major changes
 
@@ -92,8 +137,8 @@
     shown in a preview table.
   - It is now possible to remove interaction terms one by one.
   - Restricted the choices for the outcome and the predictor selections
-    (e.g. remove the outcome from the list of possible predictor
-    variables).
+    (e.g. the outcome variable is now automatically removed from the
+    list of possible predictor variables).
   - Removed some example datasets and added new ones.
   - Automatically create the R objects needed for the posterior
     predictive checks in **shinystan**.
@@ -127,9 +172,8 @@ been fixed:
     variables selected when clearing the selection of an example
     dataset.
   - Fixed a bug making it possible to clear the selection of an example
-    dataset, the outcome, or the distributional family, but to keep
-    showing the default priors and the custom priors for the former
-    selection.
+    dataset or the outcome, but to keep showing the default priors and
+    the custom priors for the former selection.
   - Fixed a bug making it possible to add an already existing
     interaction term with a different order of the involved predictor
     variables.
@@ -142,7 +186,7 @@ been fixed:
   - Fixed a bug preventing the progress file from opening up on Linux
     (when started interactively from the terminal).
 
-# shinybrms 1.0.1
+# **shinybrms** 1.0.1
 
 ## Bug fixes
 
@@ -153,7 +197,7 @@ been fixed:
         datasets.
       - Added links to the online example datasets on page "Links".
 
-# shinybrms 1.0.0 (only GitHub)
+# **shinybrms** 1.0.0 (only GitHub)
 
 First release. Offers support for Bayesian regression models with a
 Gaussian, Bernoulli, or negative binomial distribution for the

@@ -14,11 +14,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+####################################################################################################
+# Preparations and global definitions
+####################################################################################################
+
 library(shiny)
 
-####################################################################################################
-# Global object definitions
-####################################################################################################
+# Needed to prevent occasional RStudio crashes when starting the Stan run with
+# "rstan" version >= 2.21.1:
+if(identical(.Platform$OS.type, "windows") && packageVersion("rstan") >= "2.21.1"){
+  rstan::rstan_options("javascript" = FALSE)
+}
+
+# If in test mode, turn off locale-specific sorting:
+if(isTRUE(getOption("shiny.testmode"))){
+  lc_collate_orig <- Sys.getlocale("LC_COLLATE")
+  Sys.setlocale("LC_COLLATE", "C")
+}
 
 san_prior_tab_nms <- function(x){
   x <- sub("^prior$", "Prior", x)
@@ -95,18 +107,24 @@ ui <- navbarPage(
       h4("Notes"),
       p("The structure of the", strong("shinybrms"), "app follows the principle described in the previous",
         "section \"Bayesian regression models\":",
-        "The three main pages in the navigation bar above are \"Likelihood\", \"Prior\", and \"Posterior\".",
-        "Before starting with these pages, the dataset has to be uploaded on page \"Data\" (even though",
+        "The three main pages in the navigation bar above are",
+        HTML(paste(actionLink("likelihood_link1", "Likelihood")), .noWS = "after"), ",",
+        HTML(paste(actionLink("prior_link1", "Prior")), .noWS = "after"), ", and",
+        HTML(paste(actionLink("posterior_link1", "Posterior")), .noWS = "after"), ".",
+        "Before starting with these pages, the dataset has to be uploaded on page",
+        actionLink("data_link1", "Data"),
+        "(even though",
         "for testing purposes, you may also choose an example dataset there). Every page should provide",
         "help texts where necessary. If you need more help, if you want to suggest improvements, or if you",
-        "found a bug, please open an issue on", # "a bug, please follow the instructions given on page \"More\"", HTML("&rarr;"), "\"About\".",
+        "found a bug, please open an issue on",
         a("GitHub", href = "https://github.com/fweber144/shinybrms/issues", target = "_blank", .noWS = "after"),
         ". Some basic information about", strong("shinybrms"), "as well as some legal information",
-        "may be found on page \"More\"", HTML("&rarr;"), "\"About\".",
-        "Links to the software relevant for this app are given on",
-        "page \"More\"", HTML("&rarr;"), "\"Links\".",
-        "References for literature cited throughout the app may be found on",
-        "page \"More\"", HTML("&rarr;"), "\"References\"."),
+        "may be found on page",
+        HTML(paste(actionLink("about_link1", "About")), .noWS = "after"), ".",
+        "Links to the software relevant for this app are given on page",
+        HTML(paste(actionLink("links_link1", "Links")), .noWS = "after"), ".",
+        "References for literature cited throughout the app may be found on page",
+        HTML(paste(actionLink("references_link1", "References")), .noWS = "after"), "."),
       p("Furthermore, the following conventions are used throughout this app:",
         tags$ul(
           tags$li("Names of R packages are written in bold (e.g.", strong("brms", .noWS = "after"), ")."),
@@ -176,7 +194,8 @@ ui <- navbarPage(
                              "text/plain",
                              ".csv",
                              ".txt",
-                             ".dat")),
+                             ".dat"),
+                  buttonLabel = "Browse ..."),
         strong("Header:"),
         checkboxInput("header", "The file has a header containing the column names", TRUE),
         radioButtons("sep", "Separator symbol:",
@@ -247,7 +266,7 @@ ui <- navbarPage(
             target = "_blank"),
           "and the", strong("brms"), "vignette",
           a("\"Parameterization of Response Distributions in brms\"",
-            href = "https://cran.r-project.org/web/packages/brms/vignettes/brms_families.html",
+            href = "https://CRAN.R-project.org/web/packages/brms/vignettes/brms_families.html",
             target = "_blank",
             .noWS = "after"),
           ". Note that for each parameter, the link function only applies if this parameter is",
@@ -265,7 +284,7 @@ ui <- navbarPage(
             "An overall intercept will always be included."),
           p("Numeric variables (with \"numeric\" including \"integer\") are treated as continuous",
             "predictors. Non-numeric variables are treated as nominal predictors. The type of",
-            "a variable may be seen on the \"Data\" page when choosing the \"Structure\" preview",
+            "a variable may be seen on page", actionLink("data_link2", "Data"), "when choosing the \"Structure\" preview",
             "type. If you want a numeric variable to be treated as a nominal predictor, you have",
             "to convert this variable in your dataset to a character variable, e.g. by",
             "changing the value \"1\" to \"level1\", the value \"2\" to \"level2\" and so on.",
@@ -340,11 +359,11 @@ ui <- navbarPage(
             p("If you want to specify an offset, please follow these steps which ensure that",
               "the default prior for the intercept (at centered predictors) is adopted accordingly:",
               tags$ol(
-                tags$li("Add the offset variable in the \"Nonpooled main effects\" input field",
-                        "in the tab \"Predictors\"."),
-                tags$li("In the \"Specification of custom priors\" on page \"Prior\":",
+                tags$li("Add the offset variable in the input field of section \"Nonpooled main effects\" above."),
+                tags$li("In the \"Specification of custom priors\" on page",
+                        HTML(paste(actionLink("prior_link2", "Prior")), .noWS = "after"), ":",
                         tags$ol(
-                          tags$li("Choose parameter class \"b\"."),
+                          tags$li("Choose class \"b\"."),
                           tags$li("Choose the coefficient of the offset variable."),
                           tags$li("Type", code("constant(1)"), "in the input field for the prior distribution."),
                           tags$li("Click on \"Add prior\".")
@@ -365,11 +384,11 @@ ui <- navbarPage(
         wellPanel(
           h3("Preview of chosen predictor terms"),
           helpText(
-            p("Here, you can get a preview of the currently chosen predictor terms. ",
-              "This is mainly intended as a check for those familiar with R's and ",
-              strong("brms", .noWS = "outside"),
-              "'s formula syntax. A preview of the full formula is given in the tab \"Formula ",
-              "preview\" which may be found in the panel on the left-hand side."),
+            p("Here, you can get a preview of the currently chosen predictor terms.",
+              "This is mainly intended as a check for those familiar with R's and",
+              strong("brms", .noWS = "after"),
+              "'s formula syntax. A preview of the full formula is given in the tab",
+              HTML(paste(actionLink("formula_link1", "Formula preview")), .noWS = "after"), "."),
             p("A missing value (", code("NA", .noWS = "outside"), ") in column \"Group\" stands",
               "for the whole sample (i.e. no group). The value \"1\" in column \"Effect(s)\"",
               "stands for the intercept (or intercepts, if \"Group\" exists).")
@@ -383,7 +402,8 @@ ui <- navbarPage(
         br(),
         strong("Current formula:"),
         verbatimTextOutput("formula_view", placeholder = TRUE)
-      )
+      ),
+      id = "likelihood_navlist_ID"
     )
   ),
   tabPanel(
@@ -394,13 +414,15 @@ ui <- navbarPage(
       "Build the joint prior distribution of all parameters in your model by ",
       "placing independent priors on all parameters separately. Notes:",
       tags$ul(
-        tags$li("For parameters for which you do not specify a",
-                "custom prior, the default prior from the package",
-                strong("brms"), "will be used."),
+        tags$li("The default priors are taken from package", strong("brms", .noWS = "after"), "."),
+        tags$li("For parameters for which you do not specify a custom prior, the default prior will be used."),
+        tags$li("When specifying a custom prior, you may only choose a combination of",
+                "\"Class\", \"Coefficient\", and \"Group\" which is also present in the",
+                "table of the default priors."),
         tags$li("The parameter named \"Intercept\" is the intercept when centering the predictors.",
-                "This is only the internally used intercept; for the output, the intercept with",
+                "This is only the internally used intercept; in the output, the intercept with",
                 "respect to the noncentered predictors is given (named \"b_Intercept\")."),
-        tags$li("As soon as you choose a new dataset on page \"Data\" (even if you upload",
+        tags$li("As soon as you choose a new dataset on page", actionLink("data_link3", "Data"), "(even if you upload",
                 "the same dataset again), the custom priors are automatically reset."),
         tags$li("As soon as you change the likelihood, the custom priors are automatically reset.")
       ),
@@ -430,21 +452,21 @@ ui <- navbarPage(
     br(),
     sidebarLayout(
       sidebarPanel(
-        h4("Specification of custom priors"),
+        h4("Specification of a custom prior"),
         br(),
         selectInput("prior_class_sel",
                     HTML(paste0(
-                      "Parameter class:",
-                      helpText("Note: The parameter class may consist of a single parameter.",
+                      "Class:",
+                      helpText("Note: This is the parameter class. It may consist of a single parameter.",
                                style = "font-weight:normal")
                     )),
-                    choices = c("Choose parameter class ..." = ""),
+                    choices = c("Choose class ..." = ""),
                     selectize = TRUE),
         selectInput("prior_coef_sel",
                     HTML(paste0(
                       "Coefficient:",
                       helpText("Note: Leave empty to use all coefficients belonging to the",
-                               "selected parameter class.",
+                               "selected class.",
                                style = "font-weight:normal")
                     )),
                     choices = c("Choose coefficient or leave empty" = ""),
@@ -453,14 +475,10 @@ ui <- navbarPage(
                     HTML(paste0(
                       "Group (for partially pooled effects):",
                       helpText("Note: Leave empty while having an empty \"Coefficient\" field to",
-                               "use all groups belonging to the selected parameter class.",
-                               "Unfortunately, you are not able to clear this \"Group\" field",
-                               "while having an empty \"Coefficient\" field (and a nonempty",
-                               "\"Group\" field). In this case, a workaround is e.g. to first",
-                               "clear the \"Parameter class\" field.",
+                               "use all groups belonging to the selected class.",
                                style = "font-weight:normal")
                     )),
-                    choices = character(),
+                    choices = c("Choose group or leave empty" = ""),
                     selectize = TRUE),
         textInput("prior_text",
                   HTML(paste0(
@@ -671,7 +689,9 @@ ui <- navbarPage(
           br(),
           strong("Date and time when Stan run was finished:"),
           verbatimTextOutput("fit_date", placeholder = TRUE),
-          strong("Check if all MCMC diagnostics are OK (see the tab \"MCMC diagnostics\" for details):"),
+          strong("Check if all MCMC diagnostics are OK (see the tab",
+                 actionLink("mcmc_link1", "MCMC diagnostics"),
+                 "for details):"),
           verbatimTextOutput("diagn_all_out", placeholder = TRUE),
           selectInput("stanout_download_sel", "Choose output file to download (optional, but recommended):",
                       choices = c("\"brmsfit\" object (RDS file)" = "brmsfit_obj",
@@ -702,7 +722,7 @@ ui <- navbarPage(
             em("HMC-specific diagnostics"), "and", em("general MCMC diagnostics", .noWS = "after"), ".",
             "Lists of these two groups of MCMC diagnostics may be found below, together with some",
             "basic guidelines for their interpretation. These basic guidelines are also checked",
-            "automatically. Note that these are", em("basic"), "guidelines", HTML("&ndash;"), 
+            "automatically. Note that these are", em("basic"), "guidelines", HTML("&ndash;"),
             "false positive and false negative alarms are possible and",
             "in some situations, false alarms are more likely than in others.",
             "For details concerning the MCMC diagnostics used here, see the",
@@ -824,9 +844,10 @@ ui <- navbarPage(
                   tags$li("The parameters starting with \"cor_\" are the correlations between the",
                           "partially pooled effects of the same group."),
                   tags$li("\"log-posterior\" is the accumulated log-posterior density (up to an additive constant)."),
-                  tags$li(HTML(paste("All other parameters are parameters specific to the chosen",
-                                     "distributional family for the outcome (see page \"Likelihood\"",
-                                     "&rarr; \"Outcome\").")))
+                  tags$li("All other parameters are parameters specific to the chosen",
+                          "distributional family for the outcome (see page",
+                          HTML(paste(actionLink("outcome_link1", HTML("Likelihood &rarr; Outcome"))), .noWS = "after"),
+                          ").")
                 )
               ),
               tags$li(
@@ -849,7 +870,8 @@ ui <- navbarPage(
         actionButton("act_launch_shinystan",
                      HTML(paste("Launch", strong("shinystan"), "(may take a while)")),
                      class = "btn-primary")
-      )
+      ),
+      id = "posterior_navlist_ID"
     )
   ),
   navbarMenu(
@@ -873,16 +895,14 @@ ui <- navbarPage(
                     .noWS = "after"),
                   ")"),
           tags$li(strong("Version:"),
-                  "1.3.0"),
+                  "1.4.0"),
           tags$li(strong("Date:"),
-                  "August 5, 2020"),
-          tags$li(strong("License:"),
-                  a("GPL-3", href = "https://CRAN.R-project.org/web/licenses/GPL-3", target = "_blank")),
+                  "September 12, 2020"),
           tags$li(strong("Citation:"),
                   "Frank Weber (2020).",
                   em("shinybrms: Graphical User Interface ('Shiny' App)",
                      "for Package 'brms'."),
-                  "R package, version 1.3.0. URL:",
+                  "R package, version 1.4.0. URL:",
                   a("https://fweber144.github.io/shinybrms/",
                     href = "https://fweber144.github.io/shinybrms/",
                     target = "_blank",
@@ -892,10 +912,33 @@ ui <- navbarPage(
                   a("website", href = "https://fweber144.github.io/shinybrms/", target = "_blank", .noWS = "after"), ",",
                   a("CRAN", href = "https://CRAN.R-project.org/package=shinybrms", target = "_blank", .noWS = "after"), ",",
                   a("GitHub", href = "https://github.com/fweber144/shinybrms", target = "_blank"))
-        ),
+        )
+      ),
+      wellPanel(
+        h3("Issues"),
         "If you need help, if you want to suggest improvements, or if you found",
         "a bug, please open an issue on",
         a("GitHub", href = "https://github.com/fweber144/shinybrms/issues", target = "_blank", .noWS = "after"),
+        "."
+      ),
+      wellPanel(
+        h3("License information"),
+        "The", strong("shinybrms"), "package as a whole is distributed under the",
+        a("GPL-3",
+          href = "https://CRAN.R-project.org/web/licenses/GPL-3",
+          target = "_blank",
+          .noWS = "after"),
+        ". However, the", strong("shinybrms"), "package includes other open source software components.",
+        "A list of these components (together with the full copies of the license agreements",
+        "used by these components) may be found",
+        a("here (for the latest CRAN version)",
+          href = "https://CRAN.R-project.org/web/packages/shinybrms/LICENSE",
+          target = "_blank"),
+        "and",
+        a("here (for the latest GitHub version)",
+          href = "https://github.com/fweber144/shinybrms/blob/master/LICENSE",
+          target = "_blank",
+          .noWS = "after"),
         "."
       ),
       wellPanel(
@@ -911,17 +954,6 @@ ui <- navbarPage(
           tags$li("Windows is a registered trademark of Microsoft Corporation in the United States and other countries."),
           tags$li("Firefox is a trademark of the Mozilla Foundation in the U.S. and other countries.")
         )
-      ),
-      wellPanel(
-        h3("Further legal information"),
-        "shinybrms  Copyright (C) 2020  Frank Weber",
-        br(),
-        "This program comes with ABSOLUTELY NO WARRANTY; for details see the license linked under",
-        "\"Basic information\" above.",
-        br(),
-        "This is free software, and you are welcome to redistribute it",
-        "under certain conditions; see the license linked under",
-        "\"Basic information\" above for details."
       )
     ),
     tabPanel(
@@ -935,7 +967,7 @@ ui <- navbarPage(
           tags$li(a("Stan", href = "https://mc-stan.org/", target = "_blank")),
           tags$li(a("Shiny", href = "https://shiny.rstudio.com/", target = "_blank"),
                   "(seen as an own",
-                  "software entity,", # "\"software environment\",", # "\"programming language\",", # "\"software concept\",", 
+                  "software entity,", # "\"software environment\",", # "\"programming language\",", # "\"software concept\",",
                   "even though it is actually implemented",
                   "in the R package", strong("shiny"), "(see below))")
         )
@@ -1017,7 +1049,8 @@ ui <- navbarPage(
         "."))
     )
   ),
-  tabPanel(title = "Quit", value = "quit_app", icon = icon("power-off"))
+  tabPanel(title = "Quit", value = "quit_app", icon = icon("power-off")),
+  theme = "united_mod.min.css"
 )
 
 ####################################################################################################
@@ -1025,6 +1058,59 @@ ui <- navbarPage(
 ####################################################################################################
 
 server <- function(input, output, session){
+  
+  #-------------------------------------------------
+  # Links
+  
+  observeEvent({
+    input$data_link1
+    input$data_link2
+    input$data_link3
+  }, {
+    updateNavbarPage(session, "navbar_ID", "Data")
+  }, ignoreNULL = FALSE, ignoreInit = TRUE)
+  
+  observeEvent(input$likelihood_link1, {
+    updateNavbarPage(session, "navbar_ID", "Likelihood")
+  })
+  
+  observeEvent(input$outcome_link1, {
+    updateNavbarPage(session, "navbar_ID", "Likelihood")
+    updateNavlistPanel(session, "likelihood_navlist_ID", "Outcome")
+  })
+  
+  observeEvent(input$formula_link1, {
+    updateNavbarPage(session, "navbar_ID", "Likelihood")
+    updateNavlistPanel(session, "likelihood_navlist_ID", "Formula preview")
+  })
+  
+  observeEvent({
+    input$prior_link1
+    input$prior_link2
+  }, {
+    updateNavbarPage(session, "navbar_ID", "Prior")
+  }, ignoreNULL = FALSE, ignoreInit = TRUE)
+  
+  observeEvent(input$posterior_link1, {
+    updateNavbarPage(session, "navbar_ID", "Posterior")
+  })
+  
+  observeEvent(input$mcmc_link1, {
+    updateNavbarPage(session, "navbar_ID", "Posterior")
+    updateNavlistPanel(session, "posterior_navlist_ID", "MCMC diagnostics")
+  })
+  
+  observeEvent(input$about_link1, {
+    updateNavbarPage(session, "navbar_ID", "About")
+  })
+  
+  observeEvent(input$links_link1, {
+    updateNavbarPage(session, "navbar_ID", "Links")
+  })
+  
+  observeEvent(input$references_link1, {
+    updateNavbarPage(session, "navbar_ID", "References")
+  })
   
   #-------------------------------------------------
   # Data
@@ -1349,17 +1435,27 @@ server <- function(input, output, session){
     input$pred_mainNP_sel
     input$pred_mainPP_sel
   }, {
-    pred_int_keep <- sapply(pred_int_rv$choices, function(x){
-      all(x %in% c(input$pred_mainNP_sel,
-                   input$pred_mainPP_sel))
+    pred_int_sel_tmp <- pred_int_rv$choices[pred_int_rv$choices_chr %in% input$pred_int_sel]
+    pred_int_rv$choices <- lapply(pred_int_rv$choices, function(x){
+      intersect(x, c(input$pred_mainNP_sel,
+                     input$pred_mainPP_sel))
     })
-    if(any(pred_int_keep)){
-      pred_int_rv$choices <- pred_int_rv$choices[pred_int_keep]
-      pred_int_rv$choices_chr <- pred_int_rv$choices_chr[pred_int_keep]
+    pred_int_rv$choices <- pred_int_rv$choices[sapply(pred_int_rv$choices, length) > 1L]
+    pred_int_sel_tmp <- lapply(pred_int_sel_tmp, function(x){
+      intersect(x, c(input$pred_mainNP_sel,
+                     input$pred_mainPP_sel))
+    })
+    pred_int_sel_tmp <- pred_int_sel_tmp[sapply(pred_int_sel_tmp, length) > 1L]
+    if(length(pred_int_rv$choices) > 0L){
+      pred_int_rv$choices_chr <- sapply(pred_int_rv$choices, paste, collapse = "<-->")
+      if(length(pred_int_sel_tmp) > 0L){
+        pred_int_sel_tmp <- sapply(pred_int_sel_tmp, paste, collapse = "<-->")
+      } else{
+        pred_int_sel_tmp <- NULL
+      }
       updateSelectInput(session, "pred_int_sel",
                         choices = pred_int_rv$choices_chr,
-                        selected = intersect(input$pred_int_sel,
-                                             pred_int_rv$choices_chr))
+                        selected = pred_int_sel_tmp)
     } else{
       pred_int_rv$choices <- NULL
       pred_int_rv$choices_chr <- NULL
@@ -1388,7 +1484,7 @@ server <- function(input, output, session){
       #     "*" syntax (<predictor_1>*<predictor_2>) also works on the group-level side; however, for
       #     including correlations between the partially pooled effects of a specific group-level term, the
       #     terms on the population-level side need to be grouped by the term on the group-level side).
-      #   - For partially pooled slopes, add the corresponding nonpooled slopes since the partially pooled 
+      #   - For partially pooled slopes, add the corresponding nonpooled slopes since the partially pooled
       #     slopes are assumed to have mean zero.
       # The first task is performed by applying combn() to m = 1L, ..., length(x_V) with "x_V"
       # containing the group-level terms of a given element of "pred_lst".
@@ -1541,27 +1637,47 @@ server <- function(input, output, session){
     return(C_prior_default_tmp)
   })
   
-  # Update the choices for "parameter class" (if necessary):
+  # Update the choices for "class" (if necessary):
   observe({
-    prior_class_choices <- unique(C_prior_default()$class)
+    prior_class_choices <- unique(c("", C_prior_default()$class))
     prior_class_choices <- setNames(prior_class_choices, prior_class_choices)
-    prior_class_choices <- c("Choose parameter class ..." = "",
-                             prior_class_choices)
+    names(prior_class_choices)[prior_class_choices == ""] <- "Choose class ..."
+    
+    prior_class_choices_sel <- intersect(prior_class_choices,
+                                         isolate(input$prior_class_sel))
+    prior_class_choices_sel <- setNames(prior_class_choices_sel, prior_class_choices_sel)
+    names(prior_class_choices_sel)[prior_class_choices_sel == ""] <- "Choose class ..."
+    if(identical(length(prior_class_choices_sel), 0L)){
+      prior_class_choices_sel <- NULL
+    }
     
     updateSelectInput(session, "prior_class_sel",
-                      choices = prior_class_choices)
+                      choices = prior_class_choices,
+                      selected = prior_class_choices_sel)
   })
   
   # Update the choices for "coefficient" (if necessary):
   observe({
-    prior_coef_choices <- unique(c("", C_prior_default()$coef[
+    prior_coef_choices <- unique(C_prior_default()$coef[
       C_prior_default()$class %in% input$prior_class_sel
-    ]))
+    ])
+    if(identical(length(prior_coef_choices), 0L)){
+      prior_coef_choices <- ""
+    }
     prior_coef_choices <- setNames(prior_coef_choices, prior_coef_choices)
     names(prior_coef_choices)[prior_coef_choices == ""] <- "Choose coefficient or leave empty"
     
+    prior_coef_choices_sel <- intersect(prior_coef_choices,
+                                        isolate(input$prior_coef_sel))
+    prior_coef_choices_sel <- setNames(prior_coef_choices_sel, prior_coef_choices_sel)
+    names(prior_coef_choices_sel)[prior_coef_choices_sel == ""] <- "Choose coefficient or leave empty"
+    if(identical(length(prior_coef_choices_sel), 0L)){
+      prior_coef_choices_sel <- NULL
+    }
+    
     updateSelectInput(session, "prior_coef_sel",
-                      choices = prior_coef_choices)
+                      choices = prior_coef_choices,
+                      selected = prior_coef_choices_sel)
   })
   
   # Update the choices for "group" (if necessary):
@@ -1576,15 +1692,12 @@ server <- function(input, output, session){
     prior_group_choices <- setNames(prior_group_choices, prior_group_choices)
     names(prior_group_choices)[prior_group_choices == ""] <- "Choose group or leave empty"
     
-    if("" %in% prior_group_choices){
-      prior_group_choices_sel <- prior_group_choices[prior_group_choices == ""]
-    } else{
-      prior_group_choices_sel <- intersect(prior_group_choices,
-                                           isolate(input$prior_group_sel))
-      prior_group_choices_sel <- setNames(prior_group_choices_sel, prior_group_choices_sel)
-      if(identical(length(prior_group_choices_sel), 0L)){
-        prior_group_choices_sel <- NULL
-      }
+    prior_group_choices_sel <- intersect(prior_group_choices,
+                                         isolate(input$prior_group_sel))
+    prior_group_choices_sel <- setNames(prior_group_choices_sel, prior_group_choices_sel)
+    names(prior_group_choices_sel)[prior_group_choices_sel == ""] <- "Choose group or leave empty"
+    if(identical(length(prior_group_choices_sel), 0L)){
+      prior_group_choices_sel <- NULL
     }
     
     updateSelectInput(session, "prior_group_sel",
@@ -1600,12 +1713,26 @@ server <- function(input, output, session){
   # Add a custom prior if the user clicks the corresponding button:
   observeEvent(input$prior_add, {
     req(input$prior_class_sel)
-    C_prior_rv$prior_set_obj <-
-      brms::set_prior(prior = input$prior_text,
-                      class = input$prior_class_sel,
-                      coef = input$prior_coef_sel,
-                      group = input$prior_group_sel) +
-      C_prior_rv$prior_set_obj
+    prior_set_obj_add <- brms::set_prior(prior = input$prior_text,
+                                         class = input$prior_class_sel,
+                                         coef = input$prior_coef_sel,
+                                         group = input$prior_group_sel)
+    prior_set_obj_add_ch <- merge(prior_set_obj_add[, names(prior_set_obj_add) != "prior"],
+                                  C_prior_default()[, names(C_prior_default()) != "prior"],
+                                  sort = FALSE)
+    class(prior_set_obj_add_ch) <- c("brmsprior", "data.frame")
+    if(!identical(prior_set_obj_add_ch,
+                  prior_set_obj_add[, names(prior_set_obj_add) != "prior"])){
+      showNotification(
+        paste("Your custom prior has not been added since the combination of",
+              "\"Class\", \"Coefficient\", and \"Group\" you have currently selected is",
+              "not contained in the table of the default priors."),
+        duration = NA,
+        type = "error"
+      )
+      return()
+    }
+    C_prior_rv$prior_set_obj <- prior_set_obj_add + C_prior_rv$prior_set_obj
     C_prior_rv$prior_set_obj <- unique(C_prior_rv$prior_set_obj)
   })
   
@@ -1835,7 +1962,7 @@ server <- function(input, output, session){
     # Notifications for the warnings thrown by the call to brms::brm():
     if(length(warn_capt) > 0L){
       warn_capt <- unique(warn_capt)
-      warn_capt[warn_capt == "Warning: Rows containing NAs were excluded from the model."] <- 
+      warn_capt[warn_capt == "Warning: Rows containing NAs were excluded from the model."] <-
         paste("Warning: There are missing values in the data which was used for the model.",
               "The corresponding rows have been omitted in the Stan run.")
       warn_capt <- setdiff(warn_capt, "Compiling Stan program...")
@@ -1897,7 +2024,7 @@ server <- function(input, output, session){
     #---
     # Overall check for all MCMC diagnostics
     
-    C_all_OK <- all(c(C_div_OK, C_tree_OK, C_EBFMI_OK, 
+    C_all_OK <- all(c(C_div_OK, C_tree_OK, C_EBFMI_OK,
                       C_essBulk_OK, C_rhat_OK, C_essTail_OK))
     
     #---
@@ -2157,12 +2284,30 @@ server <- function(input, output, session){
   
   observe({
     if(identical(input$navbar_ID, "quit_app")){
+      if(exists("lc_collate_orig")){
+        if(identical(length(lc_collate_orig), 1L) &&
+           is.character(lc_collate_orig) &&
+           is.vector(lc_collate_orig)){
+          Sys.setlocale("LC_COLLATE", lc_collate_orig)
+        } else{
+          Sys.setlocale("LC_COLLATE", "")
+        }
+      }
       stopApp()
     }
   })
   
   session$onSessionEnded(
     function(){
+      if(exists("lc_collate_orig")){
+        if(identical(length(lc_collate_orig), 1L) &&
+           is.character(lc_collate_orig) &&
+           is.vector(lc_collate_orig)){
+          Sys.setlocale("LC_COLLATE", lc_collate_orig)
+        } else{
+          Sys.setlocale("LC_COLLATE", "")
+        }
+      }
       stopApp()
     }
   )
