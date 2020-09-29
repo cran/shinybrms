@@ -1,10 +1,10 @@
-e61ff4093b5868f4d8443f7b11dc21ff *DESCRIPTION
+db10b873452b589d8a6967660da848a7 *DESCRIPTION
 1b3accd722bb654b7afe4e0d94495a36 *LICENSE
 b3816fed7141e6cc234e39a769984da4 *NAMESPACE
-c7764948a35b2d592b843f1a7e0401aa *NEWS.md
+d74f670520a4f835a517d234497a9669 *NEWS.md
 06a279be5ba85a16d82871b704d5a4fa *R/launch_shinybrms.R
 7cce44a5a207d1b56afc36263ff3470c *README.md
-c69a8f7a7d263eae00a407099caa2d1c *inst/shinybrms_app/app.R
+aaf0fd5924ee657dc6d5a29ff1a25788 *inst/shinybrms_app/app.R
 374c96f483949e38eaf201bbec5ee88e *inst/shinybrms_app/tests/shinytest.R
 2433d9f826785aba9b788f57cb55bd54 *inst/shinybrms_app/tests/shinytest/bacteria_run_linux-expected/001.json
 bf0f0e7dd6f34be8850ce37b100892c2 *inst/shinybrms_app/tests/shinytest/bacteria_run_linux-expected/002.json
