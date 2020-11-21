@@ -16,6 +16,12 @@
     "advOpts_seed": 6789,
     "advOpts_thin": 1,
     "advOpts_warmup": null,
+    "ceff_download_sel": "pdf",
+    "cust_act": 0,
+    "cust_allow_link": 0,
+    "cust_help_link": 0,
+    "cust_name": "",
+    "cust_text": "",
     "data_link1": 0,
     "data_link2": 0,
     "data_link3": 0,
@@ -32,6 +38,8 @@
     "navbar_ID": "Posterior",
     "outc_sel": "y",
     "outcome_link1": 0,
+    "par_add": 0,
+    "par_sel": "",
     "posterior_link1": 0,
     "posterior_navlist_ID": "Run Stan",
     "pred_int_add": 1,
@@ -51,7 +59,7 @@
     "prior_link1": 0,
     "prior_link2": 0,
     "prior_reset": 0,
-    "prior_text": "student_t(3, 0, 10)",
+    "prior_text": "student_t(3, 0, 4)",
     "quote": "\"",
     "references_link1": 0,
     "run_stan": 1,
@@ -61,7 +69,8 @@
     "show_general_MCMC_tab": false,
     "show_stancode": false,
     "show_standata": false,
-    "stanout_download_sel": "brmsfit_obj"
+    "stanout_download_sel": "shinybrms_brmsfit.rds",
+    "term_sel": ""
   },
   "output": {
     "da_view": "<table  class = 'table shiny-table table- spacing-s' style = 'width:auto;'>\n<thead> <tr> <th style='text-align: left;'> y <\/th> <th style='text-align: left;'> ap <\/th> <th style='text-align: left;'> hilo <\/th> <th style='text-align: right;'> week <\/th> <th style='text-align: left;'> ID <\/th> <th style='text-align: left;'> trt <\/th>  <\/tr> <\/thead> <tbody>\n  <tr> <td> y <\/td> <td> p <\/td> <td> hi <\/td> <td align=\"right\">   0 <\/td> <td> X01 <\/td> <td> placebo <\/td> <\/tr>\n  <tr> <td> y <\/td> <td> p <\/td> <td> hi <\/td> <td align=\"right\">   2 <\/td> <td> X01 <\/td> <td> placebo <\/td> <\/tr>\n  <tr> <td> y <\/td> <td> p <\/td> <td> hi <\/td> <td align=\"right\">   4 <\/td> <td> X01 <\/td> <td> placebo <\/td> <\/tr>\n  <tr> <td> y <\/td> <td> p <\/td> <td> hi <\/td> <td align=\"right\">  11 <\/td> <td> X01 <\/td> <td> placebo <\/td> <\/tr>\n  <tr> <td> y <\/td> <td> a <\/td> <td> hi <\/td> <td align=\"right\">   0 <\/td> <td> X02 <\/td> <td> drug+ <\/td> <\/tr>\n  <tr> <td> y <\/td> <td> a <\/td> <td> hi <\/td> <td align=\"right\">   2 <\/td> <td> X02 <\/td> <td> drug+ <\/td> <\/tr>\n   <\/tbody> <\/table>",
@@ -70,7 +79,7 @@
     "formula_view": "y ~ 1 + week*trt + (1 | ID)",
     "pred_view": "<table  class = 'table shiny-table table- spacing-s' style = 'width:auto;'>\n<thead> <tr> <th style='text-align: left;'> Group <\/th> <th style='text-align: left;'> Effect(s) <\/th>  <\/tr> <\/thead> <tbody>\n  <tr> <td class='NA'> NA <\/td> <td> 1 + week*trt <\/td> <\/tr>\n  <tr> <td> ID <\/td> <td> 1 <\/td> <\/tr>\n   <\/tbody> <\/table>",
     "prior_default_view": "<table  class = 'table shiny-table table- spacing-s' style = 'width:auto;'>\n<thead> <tr> <th style='text-align: left;'> Prior <\/th> <th style='text-align: left;'> Class <\/th> <th style='text-align: left;'> Coefficient <\/th> <th style='text-align: left;'> Group <\/th>  <\/tr> <\/thead> <tbody>\n  <tr> <td> student_t(3, 0, 2.5) <\/td> <td> Intercept <\/td> <td>  <\/td> <td>  <\/td> <\/tr>\n  <tr> <td>  <\/td> <td> b <\/td> <td>  <\/td> <td>  <\/td> <\/tr>\n  <tr> <td>  <\/td> <td> b <\/td> <td> trtdrug <\/td> <td>  <\/td> <\/tr>\n  <tr> <td>  <\/td> <td> b <\/td> <td> trtdrugP <\/td> <td>  <\/td> <\/tr>\n  <tr> <td>  <\/td> <td> b <\/td> <td> week <\/td> <td>  <\/td> <\/tr>\n  <tr> <td>  <\/td> <td> b <\/td> <td> week:trtdrug <\/td> <td>  <\/td> <\/tr>\n  <tr> <td>  <\/td> <td> b <\/td> <td> week:trtdrugP <\/td> <td>  <\/td> <\/tr>\n  <tr> <td> student_t(3, 0, 2.5) <\/td> <td> sd <\/td> <td>  <\/td> <td>  <\/td> <\/tr>\n  <tr> <td>  <\/td> <td> sd <\/td> <td>  <\/td> <td> ID <\/td> <\/tr>\n  <tr> <td>  <\/td> <td> sd <\/td> <td> Intercept <\/td> <td> ID <\/td> <\/tr>\n   <\/tbody> <\/table>",
-    "prior_set_view": "<table  class = 'table shiny-table table- spacing-s' style = 'width:auto;'>\n<thead> <tr> <th style='text-align: left;'> Prior <\/th> <th style='text-align: left;'> Class <\/th> <th style='text-align: left;'> Coefficient <\/th> <th style='text-align: left;'> Group <\/th>  <\/tr> <\/thead> <tbody>\n  <tr> <td> student_t(3, 0, 10) <\/td> <td> b <\/td> <td>  <\/td> <td>  <\/td> <\/tr>\n   <\/tbody> <\/table>"
+    "prior_set_view": "<table  class = 'table shiny-table table- spacing-s' style = 'width:auto;'>\n<thead> <tr> <th style='text-align: left;'> Prior <\/th> <th style='text-align: left;'> Class <\/th> <th style='text-align: left;'> Coefficient <\/th> <th style='text-align: left;'> Group <\/th>  <\/tr> <\/thead> <tbody>\n  <tr> <td> student_t(3, 0, 4) <\/td> <td> b <\/td> <td>  <\/td> <td>  <\/td> <\/tr>\n   <\/tbody> <\/table>"
   },
   "export": {
 

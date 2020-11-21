@@ -1,3 +1,36 @@
+# **shinybrms** 1.5.0
+
+## Major changes
+
+  - Use the automatic `rstan::rstan_options("javascript" = FALSE)` fix
+    on *all* platforms (not only Windows) if **rstan** version 2.21.1 or
+    above is used.
+  - Added support for conditional-effects plots (see [`brms::conditional_effects()`](https://paul-buerkner.github.io/brms/reference/conditional_effects.brmsfit.html)).
+  - Added the possibility to perform custom posterior summary analyses,
+    e.g. for a transformation of parameters or for a sum of parameters.
+
+## Minor changes
+
+  - Tab "Summary": Increased the number of printed decimal digits
+    from 2 to 4.
+  - Tab "Summary": Replaced posterior mean and posterior standard
+    deviation by posterior median and posterior median absolute
+    deviation, respectively.
+  - For partially pooled main effects, numeric (including integer)
+    variables are not allowed anymore.
+  - Example dataset `kidiq`: Converted column `mom_hs` to factor.
+  - UI: Minor improvements (e.g. in label and notification texts).
+  - Minor cosmetic improvement in the CSS theme.
+  - Included some changes necessary for **brms** version 2.14.0 (and
+    above).
+  - Changed package description.
+  - Added CITATION file.
+  - Minor improvements in the documentation for `launch_shinybrms()`.
+
+## Bug fixes
+
+  - Fixed a possible security issue for the text input field "Prior distribution".
+
 # **shinybrms** 1.4.1
 
 ## Bug fixes

@@ -1,4 +1,4 @@
-# shinybrms: Graphical User Interface ('Shiny' App) for Package 'brms'
+# shinybrms: Graphical User Interface ('shiny' App) for 'brms'
 # Copyright (C) 2020  Frank Weber
 #   
 # This program is free software: you can redistribute it and/or modify
@@ -22,7 +22,7 @@ library(shiny)
 
 # Needed to prevent occasional RStudio crashes when starting the Stan run with
 # "rstan" version >= 2.21.1:
-if(identical(.Platform$OS.type, "windows") && packageVersion("rstan") >= "2.21.1"){
+if(packageVersion("rstan") >= "2.21.1"){
   rstan::rstan_options("javascript" = FALSE)
 }
 
@@ -41,8 +41,83 @@ san_prior_tab_nms <- function(x){
   x <- sub("^dpar$", "Distributional parameter", x)
   x <- sub("^nlpar$", "Non-linear parameter", x)
   x <- sub("^bound$", "Bound", x)
+  x <- sub("^source$", "Source", x)
   return(x)
 }
+
+# Stan function names which may be used for specifying a prior distribution:
+prior_stan_fun <- c(
+  "normal",
+  "std_normal",
+  "exp_mod_normal",
+  "skew_normal",
+  "student_t",
+  "cauchy",
+  "double_exponential",
+  "logistic",
+  "gumbel",
+  ### Requiring a lower bound (which is checked by brms:::check_prior_content()):
+  "lognormal",
+  "chi_square",
+  "inv_chi_square",
+  "scaled_inv_chi_square",
+  "exponential",
+  "gamma",
+  "inv_gamma",
+  "weibull",
+  "frechet",
+  "rayleigh",
+  "wiener",
+  "pareto",
+  "pareto_type_2",
+  ### 
+  ### Requiring a lower bound and an upper bound (which is checked by brms:::check_prior_content()):
+  "beta",
+  "beta_proportion",
+  "von_mises",
+  "uniform"
+  ### 
+)
+
+# brms function names which may be used for specifying a prior distribution:
+prior_brms_fun <- c(
+  "horseshoe",
+  "lasso",
+  "constant",
+  ### Requiring a simplex constraint:
+  "dirichlet",
+  ### 
+  ### For parameters of class "cor" (only used by brms; has no Stan function equivalent):
+  "lkj",
+  ### 
+  ### Requiring a Cholesky-factor-of-correlation-matrix constraint:
+  "lkj_corr_cholesky",
+  ### 
+  ### Requiring a correlation-matrix constraint:
+  "lkj_corr"
+  ### 
+)
+
+# Allowed symbols for "Custom summary":
+cust_allow_all <- c(as.character(0:9), " ", ".", "(", ")",
+                    getGroupMembers("Arith"),
+                    getGroupMembers("Compare"),
+                    getGroupMembers("Logic"), "!",
+                    getGroupMembers("Math"), "pmax", "pmin")
+# Escape special characters:
+cust_allow_spec <- c(".", "|", "(", ")", "^", "*", "+") # , "\\", "[", "{", "$", "?"
+cust_allow_grp <- cust_allow_all
+for(char_i in cust_allow_spec){
+  cust_allow_grp <- sub(char_i, paste0("\\", char_i), cust_allow_grp, fixed = TRUE)
+}
+
+# Empty "Custom summary" table:
+cust_smmry_empty <- setNames(cbind(data.frame(character()), as.data.frame(matrix(0, nrow = 0, ncol = 8))),
+                             sub("^Q50$",
+                                 "median",
+                                 c("Name",
+                                   paste0("Q", sub("\\.0$", "", 100 * c(0.025, 0.25, 0.5, 0.75, 0.975))),
+                                   "MAD", "mean", "SD")))
 
 ####################################################################################################
 # UI
@@ -61,7 +136,7 @@ ui <- navbarPage(
       # br(),
       h4("Description"),
       p("This",
-        a("Shiny", href = "https://shiny.rstudio.com/", target = "_blank"),
+        a(strong("shiny"), href = "https://shiny.rstudio.com/", target = "_blank"),
         "app is part of the",
         a("R", href = "https://www.R-project.org/", target = "_blank"),
         "package",
@@ -280,33 +355,45 @@ ui <- navbarPage(
         br(),
         helpText(
           p("Choose the predictors (the independent variables). More specifically, you may define",
-            "main effects of predictors and interactions between predictors.",
+            "main effects of predictor variables and interactions between predictor variables.",
             "An overall intercept will always be included."),
           p("Numeric variables (with \"numeric\" including \"integer\") are treated as continuous",
-            "predictors. Non-numeric variables are treated as nominal predictors. The type of",
-            "a variable may be seen on page", actionLink("data_link2", "Data"), "when choosing the \"Structure\" preview",
-            "type. If you want a numeric variable to be treated as a nominal predictor, you have",
-            "to convert this variable in your dataset to a character variable, e.g. by",
-            "changing the value \"1\" to \"level1\", the value \"2\" to \"level2\" and so on.",
-            "For nominal predictors, the first level (after sorting alphabetically) will be the",
-            "reference level.")),
+            "predictor variables. Non-numeric variables are treated as nominal predictor variables.",
+            "The type of a variable may be seen on page", actionLink("data_link2", "Data"),
+            "when choosing the \"Structure\" preview type. If you want a numeric variable to be",
+            "treated as a nominal predictor variable, you have to convert this variable in your",
+            "dataset to a character variable, e.g. by changing the value", code("1"), "to",
+            code("level1", .noWS = "after"), ", the value", code("2"), "to",
+            code("level2", .noWS = "after"), ", and so on.",
+            "For nominal predictor variables, the first level (after sorting alphabetically) will be the",
+            "reference level.")
+        ),
         wellPanel(
           h3("Main effects"),
-          helpText("Note:",
+          helpText("Notes:",
                    tags$ul(
-                     tags$li("Nonpooled effects are also known as constant, population-level, or fixed effects."),
-                     tags$li("Partially pooled effects are also known as varying, group-level, or random effects."),
+                     tags$li("Nonpooled effects are also known as population-level, constant, or fixed effects."),
+                     tags$li("Partially pooled effects are also known as group-level, varying, or random effects."),
                    )),
           h4("Nonpooled main effects"),
-          helpText("Start typing or click into the field below to choose variables for which",
-                   "nonpooled main effects shall be added."),
+          helpText(
+            "Start typing or click into the field below to choose variables for which",
+            "nonpooled main effects shall be added."
+          ),
           selectInput("pred_mainNP_sel", NULL,
                       choices = c("Choose variables for nonpooled main effects ..." = ""),
                       multiple = TRUE,
                       selectize = TRUE),
           h4("Partially pooled main effects"),
-          helpText("Start typing or click into the field below to choose variables for which",
-                   "partially pooled main effects shall be added."),
+          helpText(
+            "Start typing or click into the field below to choose variables for which",
+            "partially pooled main effects shall be added.",
+            "Note that you may not specify partially pooled main effects for a numeric variable.",
+            "This is not allowed to point out that a variable must be treated as nominal to have",
+            "partially pooled main effects.",
+            "If you really want partially pooled main effects for a numeric variable, you",
+            "have to convert this variable in your dataset to a character variable."
+          ),
           selectInput("pred_mainPP_sel", NULL,
                       choices = c("Choose variables for partially pooled main effects ..." = ""),
                       multiple = TRUE,
@@ -316,8 +403,8 @@ ui <- navbarPage(
           h3("Interaction effects"),
           helpText(
             p("Here, the term \"interaction\" not only denotes interactions involving only",
-              "predictors with nonpooled effects (yielding an interaction with nonpooled effects),",
-              "but also interactions involving predictors with partially pooled effects (yielding",
+              "predictor variables with nonpooled effects (yielding an interaction with nonpooled effects),",
+              "but also interactions involving predictor variables with partially pooled effects (yielding",
               "an interaction with partially pooled effects).",
               "This broad definition of \"interaction\" is indicated here by the symbol \"<-->\"."),
             p("Only variables already having a main effect may be included in an interaction",
@@ -363,7 +450,7 @@ ui <- navbarPage(
                 tags$li("In the \"Specification of custom priors\" on page",
                         HTML(paste(actionLink("prior_link2", "Prior")), .noWS = "after"), ":",
                         tags$ol(
-                          tags$li("Choose class \"b\"."),
+                          tags$li("Choose class", code("b", .noWS = "after"), "."),
                           tags$li("Choose the coefficient of the offset variable."),
                           tags$li("Type", code("constant(1)"), "in the input field for the prior distribution."),
                           tags$li("Click on \"Add prior\".")
@@ -390,7 +477,7 @@ ui <- navbarPage(
               "'s formula syntax. A preview of the full formula is given in the tab",
               HTML(paste(actionLink("formula_link1", "Formula preview")), .noWS = "after"), "."),
             p("A missing value (", code("NA", .noWS = "outside"), ") in column \"Group\" stands",
-              "for the whole sample (i.e. no group). The value \"1\" in column \"Effect(s)\"",
+              "for the whole sample (i.e. no group). The value", code("1"), "in column \"Effect(s)\"",
               "stands for the intercept (or intercepts, if \"Group\" exists).")
           ),
           tableOutput("pred_view")
@@ -419,9 +506,9 @@ ui <- navbarPage(
         tags$li("When specifying a custom prior, you may only choose a combination of",
                 "\"Class\", \"Coefficient\", and \"Group\" which is also present in the",
                 "table of the default priors."),
-        tags$li("The parameter named \"Intercept\" is the intercept when centering the predictors.",
+        tags$li("The parameter named", code("Intercept"), "is the intercept when centering the predictors.",
                 "This is only the internally used intercept; in the output, the intercept with",
-                "respect to the noncentered predictors is given (named \"b_Intercept\")."),
+                "respect to the noncentered predictors is given (named", code("b_Intercept", .noWS = "after"), ")."),
         tags$li("As soon as you choose a new dataset on page", actionLink("data_link3", "Data"), "(even if you upload",
                 "the same dataset again), the custom priors are automatically reset."),
         tags$li("As soon as you change the likelihood, the custom priors are automatically reset.")
@@ -438,7 +525,13 @@ ui <- navbarPage(
       a(HTML("Stan documentation"),
         href = "https://mc-stan.org/users/documentation/",
         target = "_blank"),
-      " (in particular, the \"Stan Functions Reference\")."
+      " (in particular, the ",
+      a("\"Stan Functions Reference\"",
+        href = "https://mc-stan.org/docs/2_21/functions-reference/index.html",
+        target = "_blank"),
+      ", here for Stan version 2.21.0 since this is the Stan version used by the most recent version of ",
+      strong("rstan"),
+      ")."
     ))),
     hr(),
     h3("Default priors"),
@@ -481,36 +574,39 @@ ui <- navbarPage(
                     choices = c("Choose group or leave empty" = ""),
                     selectize = TRUE),
         textInput("prior_text",
-                  HTML(paste0(
+                  HTML(paste(
                     "Prior distribution:",
                     helpText(
-                      HTML(paste0(
-                        "Note: You may ", em("either"),
+                      HTML(paste(
+                        "Note: You may", em("either"),
                         tags$ul(
-                          tags$li(HTML(paste0("specify a prior distribution using a Stan function ",
-                                              em("or")))),
-                          tags$li(HTML(paste0("specify a prior distribution using one of the ",
-                                              "special (pseudo-)functions defined by ", strong("brms"),
-                                              " for this purpose (e.g. ",
-                                              a(HTML(paste(code("brms::horseshoe()"))),
-                                                href = "https://paul-buerkner.github.io/brms/reference/horseshoe.html",
-                                                target = "_blank"),
-                                              " and ",
-                                              a(HTML(paste(code("lkj"))),
-                                                href = "https://paul-buerkner.github.io/brms/reference/set_prior.html",
-                                                target = "_blank"),
-                                              ") ", em("or")))),
+                          tags$li(HTML(paste(
+                            "specify a prior distribution using a Stan function (see the",
+                            a("\"Stan Functions Reference\"",
+                              href = "https://mc-stan.org/docs/2_21/functions-reference/index.html",
+                              target = "_blank"),
+                            "for details),", em("or")
+                          ))),
+                          tags$li(HTML(paste(
+                            "specify a prior distribution using one of the",
+                            "special (pseudo-)functions defined by", strong("brms"),
+                            "for this purpose (see",
+                            a(HTML(paste(code("brms::set_prior()"))),
+                              href = "https://paul-buerkner.github.io/brms/reference/set_prior.html",
+                              target = "_blank"),
+                            "for details; an important example is", code("lkj"),
+                            "for parameters of class", code("cor", .noWS = "after"), "),", em("or")
+                          ))),
                           tags$li("leave this field empty to use a flat prior.")
                         ),
-                        "If you specify a prior distribution using a Stan function, you have to ",
-                        "use the Stan function which would be used in a Stan sampling statement ",
-                        "and specify values for all arguments of this Stan function (e.g. ",
-                        code("normal(0, 2.5)"), "). "
+                        "If you specify a prior distribution using a Stan function, you have to",
+                        "use the Stan function which would be used in a Stan sampling statement",
+                        "and specify values for all arguments of this Stan function (e.g.",
+                        code("normal(0, 2.5)", .noWS = "after"), ")."
                       )),
                       style = "font-weight:normal"
                     )
                   )),
-                  value = "",
                   placeholder = "Enter prior distribution using a Stan function or leave empty to use a flat prior"),
         actionButton("prior_add", "Add prior", class = "btn-primary"),
         br(),
@@ -656,22 +752,22 @@ ui <- navbarPage(
                                   inline = TRUE),
                      numericInput("advOpts_init_r",
                                   HTML(paste0("Range of random initial values in the unconstrained parameter space (",
-                                              code("\"init_r\""),
+                                              code("init_r"),
                                               "; only relevant if random initial values are chosen):")),
                                   value = 2, step = 0.1, min = 0),
                      numericInput("advOpts_adapt_delta",
-                                  HTML(paste0("Target Metropolis acceptance rate (", code("\"adapt_delta\""), "):")),
+                                  HTML(paste0("Target Metropolis acceptance rate (", code("adapt_delta"), "):")),
                                   value = 0.95, step = 0.01, min = 0, max = 1),
                      numericInput("advOpts_max_treedepth",
-                                  HTML(paste0("Maximum tree depth (", code("\"max_treedepth\""), "):")),
+                                  HTML(paste0("Maximum tree depth (", code("max_treedepth"), "):")),
                                   value = 15L, step = 1L, min = 1L),
                      checkboxInput("advOpts_open_progress", strong("Open progress"),
                                    value = TRUE),
                      numericInput("advOpts_refresh",
-                                  HTML(paste0("Progress-refreshing step size (", code("\"refresh\""), "):")),
+                                  HTML(paste0("Progress-refreshing step size (", code("refresh"), "):")),
                                   value = NA, step = 1L, min = 0L),
                      checkboxInput("advOpts_save_all_pars",
-                                   strong("Save draws for", em("all"), "parameters, including internal ones (", code("\"save_all_pars\"", .noWS = "outside"), ")"),
+                                   strong("Save draws for", em("all"), "parameters, including internal ones"),
                                    value = FALSE),
                      checkboxInput("advOpts_save_warmup", strong("Save warmup"),
                                    value = TRUE))
@@ -687,20 +783,20 @@ ui <- navbarPage(
           actionButton("run_stan", "Run Stan (may take a while)", class = "btn-primary"),
           br(),
           br(),
-          strong("Date and time when Stan run was finished:"),
+          strong("Date and time when the Stan run was finished:"),
           verbatimTextOutput("fit_date", placeholder = TRUE),
           strong("Check if all MCMC diagnostics are OK (see the tab",
                  actionLink("mcmc_link1", "MCMC diagnostics"),
                  "for details):"),
           verbatimTextOutput("diagn_all_out", placeholder = TRUE),
-          selectInput("stanout_download_sel", "Choose output file to download (optional, but recommended):",
-                      choices = c("\"brmsfit\" object (RDS file)" = "brmsfit_obj",
-                                  "List of MCMC diagnostics (RDS file)" = "diagn_obj",
-                                  "Matrix of posterior draws (CSV file)" = "draws_mat_csv",
-                                  "Matrix of posterior draws (RDS file)" = "draws_mat_obj",
-                                  "Array of posterior draws (RDS file)" = "draws_arr_obj"),
+          selectInput("stanout_download_sel", "Choose output file to download:",
+                      choices = c("\"brmsfit\" object (RDS file)" = "shinybrms_brmsfit.rds",
+                                  "List of MCMC diagnostics (RDS file)" = "shinybrms_MCMC_diagnostics.rds",
+                                  "Matrix of posterior draws (CSV file)" = "shinybrms_post_draws_mat.csv",
+                                  "Matrix of posterior draws (RDS file)" = "shinybrms_post_draws_mat.rds",
+                                  "Array of posterior draws (RDS file)" = "shinybrms_post_draws_arr.rds"),
                       selectize = TRUE),
-          helpText(HTML(paste0("The most comprehensive output object is the \"brmsfit\" object which ",
+          helpText(HTML(paste0("The most comprehensive output object is the", code("brmsfit"), "object which ",
                                "is the output from the R function ",
                                a(HTML(paste(code("brms::brm()"))),
                                  href = "https://paul-buerkner.github.io/brms/reference/brm.html",
@@ -757,27 +853,36 @@ ui <- navbarPage(
           p("The general MCMC diagnostics (computed for each parameter",
             "as well as for the accumulated log-posterior density) are:",
             tags$ul(
-              tags$li("the modified",
-                      # "variant of the",
-                      "potential scale reduction factor \\(\\widehat{R}\\)",
-                      # "(",
-                      # a("Gelman and Rubin, 1992",
-                      #   href = "https://doi.org/10.1214/ss/1177011136",
-                      #   target = "_blank",
-                      #   .noWS = "outside"),
-                      # ";",
-                      # a("Brooks and Gelman, 1998",
-                      #   href = "https://doi.org/10.2307/1390675",
-                      #   target = "_blank",
-                      #   .noWS = "after"),
-                      # ")",
-                      "proposed by",
-                      a("Vehtari et al. (2020)",
-                        href = "https://doi.org/10.1214/20-BA1221",
-                        target = "_blank"),
-                      "(here simply called \"the\" \\(\\widehat{R}\\) instead of \"the modified\" \\(\\widehat{R}\\)),"),
-              tags$li("the effective sample size (ESS) in the bulk of the corresponding marginal posterior distribution (short: bulk-ESS or \\(\\text{ESS}_{\\text{bulk}}\\)),"),
-              tags$li("the ESS in the tails of the corresponding marginal posterior distribution (short: tail-ESS or \\(\\text{ESS}_{\\text{tail}}\\)).")
+              tags$li(
+                "the modified",
+                # "variant of the",
+                "potential scale reduction factor \\(\\widehat{R}\\)",
+                # "(",
+                # a("Gelman and Rubin, 1992",
+                #   href = "https://doi.org/10.1214/ss/1177011136",
+                #   target = "_blank",
+                #   .noWS = "outside"),
+                # ";",
+                # a("Brooks and Gelman, 1998",
+                #   href = "https://doi.org/10.2307/1390675",
+                #   target = "_blank",
+                #   .noWS = "after"),
+                # ")",
+                "proposed by",
+                a("Vehtari et al. (2020)",
+                  href = "https://doi.org/10.1214/20-BA1221",
+                  target = "_blank"),
+                "(here simply called", em("the"), "\\(\\widehat{R}\\) instead of",
+                em("the modified"), "\\(\\widehat{R}\\)),"
+              ),
+              tags$li(
+                "the effective sample size (ESS) in the bulk of the corresponding marginal posterior",
+                "distribution (short: bulk-ESS or \\(\\text{ESS}_{\\text{bulk}}\\)),"
+              ),
+              tags$li(
+                "the ESS in the tails of the corresponding marginal posterior",
+                "distribution (short: tail-ESS or \\(\\text{ESS}_{\\text{tail}}\\))."
+              )
             ),
             "In general, the following values of the general MCMC diagnostics are worrying:",
             tags$ul(
@@ -817,7 +922,111 @@ ui <- navbarPage(
         "Summary",
         titlePanel("Summary"),
         br(),
+        helpText("Notes:",
+                 tags$ul(
+                   tags$li("Column", code("Estimate"), "contains the posterior median."),
+                   tags$li("Column", code("Est.Error"), "contains the posterior median absolute deviation."),
+                   tags$li("Column", code("l-95% CI"), "contains the lower boundary of the 95% central posterior interval."),
+                   tags$li("Column", code("u-95% CI"), "contains the upper boundary of the 95% central posterior interval.")
+                 )),
+        br(),
         verbatimTextOutput("smmry_view", placeholder = TRUE)
+      ),
+      tabPanel(
+        "Custom summary",
+        titlePanel("Custom summary"),
+        br(),
+        helpText(p("Here, you may calculate posterior summary quantities for a custom mathematical",
+                   "(or logical) expression involving at least one parameter.",
+                   "Click", HTML(paste(actionLink("cust_allow_link", "here"))),
+                   "for a list of characters and character groups which are allowed in the custom expression.",
+                   "For details on how to use these characters or character groups, see the examples below",
+                   "or", HTML(paste(actionLink("cust_help_link", "these links")), .noWS = "after"), ".",
+                   "Parameter names need to be enclosed in backticks (", code("`", .noWS = "outside"), ").",
+                   "The drop-down list below may be used for inserting parameter names (directly with",
+                   "enclosing backticks) into the custom expression."),
+                 p("Fictitious examples for a custom expression would be:",
+                   tags$ul(
+                     tags$li(code("`b_age` + `b_age:genderM`")),
+                     tags$li(code("log(`sigma`)")),
+                     tags$li(code("`b_treatment` > 0.2"))
+                   ),
+                   "For the latter example, the posterior mean gives the posterior probability that",
+                   code("`b_treatment` > 0.2", .noWS = "after"),
+                   ".")),
+        br(),
+        textInput("cust_text", "Custom expression involving at least one parameter:",
+                  placeholder = "Enter expression ...",
+                  width = "100%"),
+        selectInput("par_sel", "Parameter name to insert:",
+                    choices = c("Choose parameter name ..." = ""),
+                    selectize = TRUE),
+        actionButton("par_add", "Insert parameter name"),
+        br(),
+        br(),
+        textInput("cust_name", "Name for the custom expression (optional):",
+                  placeholder = "Enter name or leave empty"),
+        br(),
+        actionButton("cust_act", "Calculate posterior summary quantities", class = "btn-primary"),
+        br(),
+        br(),
+        strong("Posterior summary quantities:"),
+        tableOutput("cust_view"),
+        helpText("Note: All columns contain", em("posterior"), "summary quantities.",
+                 "In particular, the columns starting with \"Q\" contain the corresponding",
+                 "posterior percentiles and column \"MAD\" contains the posterior median absolute deviation."),
+        downloadButton("cust_smmry_download", "Download custom summary"),
+        br(),
+        br()
+      ),
+      tabPanel(
+        "Conditional effects",
+        titlePanel("Conditional effects"),
+        br(),
+        helpText(
+          p("A conditional-effects plot shows the estimated effect of a predictor variable on the outcome.",
+            "An interaction effect involving at most two predictor variables may also be visualized",
+            "by showing the estimated effect of the first predictor variable (involved in this interaction)",
+            "separately for appropriate values", # Thereby, "appropriate" means: "at the mean" as well as at "mean plus/minus one standard deviation" for continuous predictor variables and at all categories for categorical predictor variables.
+            "of the second predictor variable (involved in this interaction)."),
+          p("As its name suggests, a conditional-effects plot", em("conditions"), "on specific values of",
+            "those predictor variables which are not involved in the plot:",
+            "It conditions on the mean of continuous predictor variables and",
+            "on the reference category of those categorical predictor variables which have nonpooled main effects.",
+            "Partially pooled effects are set to zero, with the following exceptions:",
+            tags$ul(
+              tags$li("Those partially pooled effects which are plotted are not set to zero (otherwise,",
+                      "there would not be anything meaningful to plot)."),
+              tags$li("If partially pooled slopes are plotted, the corresponding partially pooled intercepts",
+                      "are also not set to zero (for consistency with nonpooled interaction effects).") # More precisely: "for consistency with nonpooled interaction effects (and this also avoids problems with dummy-coded partially pooled slopes)"
+            )),
+          p("Be cautious with predictor variables having a high number of levels (which is usually",
+            "only the case for partially pooled effects): In that case, the computation may",
+            "take a long time and the resulting plot is rarely useful.")
+        ),
+        # br(),
+        selectInput("term_sel", "Predictor term to plot:",
+                    choices = c("Choose predictor term ..." = ""),
+                    selectize = TRUE),
+        # br(),
+        plotOutput("size_aux", width = "100%", height = "1px"), # Only for getting the width in pixels corresponding to argument 'width = "100%"'.
+        plotOutput("ceff_plot", inline = TRUE),
+        br(),
+        selectInput("ceff_download_sel", "Choose file format for download:",
+                    choices = c("PDF" = "pdf",
+                                "JPEG" = "jpeg",
+                                "PNG" = "png",
+                                "BMP" = "bmp",
+                                "TIFF" = "tiff",
+                                "SVG" = "svg"),
+                    selectize = TRUE),
+        helpText(
+          "If you want to download the plot in a different size, simply adjust your browser window size",
+          "until the plot in the app has the desired size and then download the plot."
+        ),
+        downloadButton("ceff_download", "Download plot"),
+        br(),
+        br()
       ),
       tabPanel(
         HTML(paste("Launch", strong("shinystan"))),
@@ -826,24 +1035,24 @@ ui <- navbarPage(
         helpText(
           p("The package",
             a(HTML(paste(strong("shinystan"))), href = "https://mc-stan.org/shinystan/", target = "_blank"),
-            "provides a Shiny app offering an interactive inspection of Stan's output."),
+            "provides a", strong("shiny"), "app offering an interactive inspection of Stan's output."),
           p("Notes:",
             tags$ul(
               tags$li(
                 "In the", strong("shinystan"), "app, the parameter names given by", strong("brms"),
                 "are used. These are as follows:",
                 tags$ul(
-                  tags$li("\"b_Intercept\" is the intercept (with respect to the noncentered predictors)."),
-                  tags$li("The parameters starting with \"b_\" are the nonpooled effects."),
+                  tags$li(code("b_Intercept"), "is the intercept (with respect to the noncentered predictors)."),
+                  tags$li("The parameters starting with", code("b_"), "are the nonpooled effects."),
                   tags$li("If you used the", code("constant(1)"), "approach for including an offset, then",
-                          "the parameters starting with \"par_b_\" are internal parameters which you don't",
+                          "the parameters starting with", code("par_b_"), "are internal parameters which you don't",
                           "need to take into account."),
-                  tags$li("The parameters starting with \"r_\" are the partially pooled effects."),
-                  tags$li("The parameters starting with \"sd_\" are the standard deviations of the",
+                  tags$li("The parameters starting with", code("r_"), "are the partially pooled effects."),
+                  tags$li("The parameters starting with", code("sd_"), "are the standard deviations of the",
                           "partially pooled effects."),
-                  tags$li("The parameters starting with \"cor_\" are the correlations between the",
+                  tags$li("The parameters starting with", code("cor_"), "are the correlations between the",
                           "partially pooled effects of the same group."),
-                  tags$li("\"log-posterior\" is the accumulated log-posterior density (up to an additive constant)."),
+                  tags$li(code("log-posterior"), "is the accumulated log-posterior density (up to an additive constant)."),
                   tags$li("All other parameters are parameters specific to the chosen",
                           "distributional family for the outcome (see page",
                           HTML(paste(actionLink("outcome_link1", HTML("Likelihood &rarr; Outcome"))), .noWS = "after"),
@@ -894,15 +1103,19 @@ ui <- navbarPage(
                     href = "mailto:fweber144@protonmail.com",
                     .noWS = "after"),
                   ")"),
+          tags$li(strong("Contributors:"),
+                  "Thomas Park (for the Bootswatch theme \"United\");",
+                  "Twitter, Inc. (for Bootstrap, the basis for the Bootswatch theme \"United\");",
+                  "Google, LLC (for the \"Open Sans\" font)"),
           tags$li(strong("Version:"),
-                  "1.4.1"),
+                  "1.5.0"),
           tags$li(strong("Date:"),
-                  "September 28, 2020"),
+                  "November 20, 2020"),
           tags$li(strong("Citation:"),
                   "Frank Weber (2020).",
-                  em("shinybrms: Graphical User Interface ('Shiny' App)",
-                     "for Package 'brms'."),
-                  "R package, version 1.4.1. URL:",
+                  em("shinybrms: Graphical User Interface ('shiny' App)",
+                     "for 'brms'."),
+                  "R package, version 1.5.0. URL:",
                   a("https://fweber144.github.io/shinybrms/",
                     href = "https://fweber144.github.io/shinybrms/",
                     target = "_blank",
@@ -964,12 +1177,7 @@ ui <- navbarPage(
         h3("Programming languages and software environments"),
         tags$ul(
           tags$li(a("R", href = "https://www.R-project.org/", target = "_blank")),
-          tags$li(a("Stan", href = "https://mc-stan.org/", target = "_blank")),
-          tags$li(a("Shiny", href = "https://shiny.rstudio.com/", target = "_blank"),
-                  "(seen as an own",
-                  "software entity,", # "\"software environment\",", # "\"programming language\",", # "\"software concept\",",
-                  "even though it is actually implemented",
-                  "in the R package", strong("shiny"), "(see below))")
+          tags$li(a("Stan", href = "https://mc-stan.org/", target = "_blank"))
         )
       ),
       wellPanel(
@@ -1128,7 +1336,7 @@ server <- function(input, output, session){
         return(get("Arabidopsis", envir = tmp_env))
       } else{
         showNotification(
-          "Package \"lme4\" needed. Please install it.",
+          HTML(paste("Package", code("lme4"), "needed. Please install it.")),
           duration = NA,
           type = "error"
         )
@@ -1141,7 +1349,7 @@ server <- function(input, output, session){
         return(get("bacteria", envir = tmp_env))
       } else{
         showNotification(
-          "Package \"MASS\" needed. Please install it.",
+          HTML(paste("Package", code("MASS"), "needed. Please install it.")),
           duration = NA,
           type = "error"
         )
@@ -1165,7 +1373,7 @@ server <- function(input, output, session){
         return(get("birthwt", envir = tmp_env))
       } else{
         showNotification(
-          "Package \"MASS\" needed. Please install it.",
+          HTML(paste("Package", code("MASS"), "needed. Please install it.")),
           duration = NA,
           type = "error"
         )
@@ -1178,7 +1386,7 @@ server <- function(input, output, session){
         return(get("epilepsy", envir = tmp_env))
       } else{
         showNotification(
-          "Package \"brms\" needed. Please install it.",
+          HTML(paste("Package", code("brms"), "needed. Please install it.")),
           duration = NA,
           type = "error"
         )
@@ -1191,7 +1399,7 @@ server <- function(input, output, session){
         return(get("grouseticks", envir = tmp_env))
       } else{
         showNotification(
-          "Package \"lme4\" needed. Please install it.",
+          HTML(paste("Package", code("lme4"), "needed. Please install it.")),
           duration = NA,
           type = "error"
         )
@@ -1201,10 +1409,13 @@ server <- function(input, output, session){
       if(requireNamespace("rstanarm", quietly = TRUE)){
         tmp_env <- new.env()
         data(kidiq, package = "rstanarm", envir = tmp_env)
+        assign("kidiq", within(get("kidiq", envir = tmp_env), {
+          mom_hs <- factor(paste0("hs", mom_hs))
+        }), envir = tmp_env)
         return(get("kidiq", envir = tmp_env))
       } else{
         showNotification(
-          "Package \"rstanarm\" needed. Please install it.",
+          HTML(paste("Package", code("rstanarm"), "needed. Please install it.")),
           duration = NA,
           type = "error"
         )
@@ -1219,7 +1430,7 @@ server <- function(input, output, session){
         return(get("quine", envir = tmp_env))
       } else{
         showNotification(
-          "Package \"MASS\" needed. Please install it.",
+          HTML(paste("Package", code("MASS"), "needed. Please install it.")),
           duration = NA,
           type = "error"
         )
@@ -1232,7 +1443,7 @@ server <- function(input, output, session){
         return(get("Rabbit", envir = tmp_env))
       } else{
         showNotification(
-          "Package \"MASS\" needed. Please install it.",
+          HTML(paste("Package", code("MASS"), "needed. Please install it.")),
           duration = NA,
           type = "error"
         )
@@ -1255,7 +1466,7 @@ server <- function(input, output, session){
         return(get("roaches", envir = tmp_env))
       } else{
         showNotification(
-          "Package \"rstanarm\" needed. Please install it.",
+          HTML(paste("Package", code("rstanarm"), "needed. Please install it.")),
           duration = NA,
           type = "error"
         )
@@ -1268,7 +1479,7 @@ server <- function(input, output, session){
         return(get("sleepstudy", envir = tmp_env))
       } else{
         showNotification(
-          "Package \"lme4\" needed. Please install it.",
+          HTML(paste("Package", code("lme4"), "needed. Please install it.")),
           duration = NA,
           type = "error"
         )
@@ -1278,19 +1489,38 @@ server <- function(input, output, session){
       return(ToothGrowth)
     } else{
       req(input$file_upload)
-      try(return(read.csv(input$file_upload$datapath,
-                          header = input$header,
-                          sep = input$sep,
-                          quote = input$quote,
-                          dec = input$dec,
-                          na.strings = c("NA", "."))),
-          silent = TRUE)
-      showNotification(
-        "File upload was not successful.",
-        duration = NA,
-        type = "error"
-      )
-      req(FALSE)
+      da_tmp <- try(read.csv(input$file_upload$datapath,
+                             header = input$header,
+                             sep = input$sep,
+                             quote = input$quote,
+                             dec = input$dec,
+                             na.strings = c("NA", ".")),
+                    silent = TRUE)
+      if(inherits(da_tmp, "try-error")){
+        showNotification(
+          "File upload was not successful.",
+          duration = NA,
+          type = "error"
+        )
+        req(FALSE)
+      }
+      if("." %in% names(da_tmp)){
+        if(!"X." %in% names(da_tmp)){
+          names(da_tmp)[names(da_tmp) == "."] <- "X."
+        } else{
+          showNotification(
+            HTML(paste(
+              "The column name", code("."), "(dot) is not allowed. Automatically renaming this",
+              "column to", code("X."), "failed since there already exists a column",
+              code("X.", .noWS = "after"), "."
+            )),
+            duration = NA,
+            type = "error"
+          )
+          req(FALSE)
+        }
+      }
+      return(da_tmp)
     }
   })
   
@@ -1387,11 +1617,19 @@ server <- function(input, output, session){
                         choices = c("Choose variables for partially pooled main effects ..." = ""))
       return()
     }
+    PP_sel_choices <- setdiff(names(da()),
+                              c(input$outc_sel,
+                                input$pred_mainNP_sel))
+    if(length(PP_sel_choices) > 0L){
+      # Only allow factor, character, and logical variables:
+      PP_sel_choices_OK <- sapply(da()[PP_sel_choices], function(x){
+        is.character(x) || is.factor(x) || is.logical(x)
+      })
+      PP_sel_choices <- PP_sel_choices[PP_sel_choices_OK]
+    }
     updateSelectInput(session, "pred_mainPP_sel",
                       choices = c("Choose variables for partially pooled main effects ..." = "",
-                                  setdiff(names(da()),
-                                          c(input$outc_sel,
-                                            input$pred_mainNP_sel))),
+                                  PP_sel_choices),
                       selected = isolate(input$pred_mainPP_sel))
   })
   
@@ -1486,7 +1724,7 @@ server <- function(input, output, session){
       #     terms on the population-level side need to be grouped by the term on the group-level side).
       #   - For partially pooled slopes, add the corresponding nonpooled slopes since the partially pooled
       #     slopes are assumed to have mean zero.
-      # The first task is performed by applying combn() to m = 1L, ..., length(x_V) with "x_V"
+      # The first task is performed by applying combn() to m = 1L, ..., length(xPP) with "xPP"
       # containing the group-level terms of a given element of "pred_lst".
       # The second task is performed by additionally applying combn() to m = 0L when performing
       # the first task.
@@ -1496,11 +1734,11 @@ server <- function(input, output, session){
       if(any(pred_needsExpand)){ # This if() condition is not necessary, but included for better readability.
         pred_lst_toExpand <- pred_lst[pred_needsExpand]
         pred_lst_expanded <- do.call("c", lapply(pred_lst_toExpand, function(x){
-          x_V <- intersect(x, input$pred_mainPP_sel)
-          x_V_lst_expanded <- unlist(lapply(c(0L, seq_along(x_V)), combn, x = x_V, simplify = FALSE),
+          xPP <- intersect(x, input$pred_mainPP_sel)
+          xPP_lst_expanded <- unlist(lapply(c(0L, seq_along(xPP)), combn, x = xPP, simplify = FALSE),
                                      recursive = FALSE)
-          x_NV <- intersect(x, input$pred_mainNP_sel)
-          lapply(x_V_lst_expanded, "c", x_NV)
+          xNP <- intersect(x, input$pred_mainNP_sel)
+          lapply(xPP_lst_expanded, "c", xNP)
         }))
         pred_lst <- c(pred_lst[!pred_needsExpand],
                       pred_lst_expanded)
@@ -1512,41 +1750,41 @@ server <- function(input, output, session){
       # By group-level term: Check each population-level term for being a "subterm" (lower-order
       # term) of a high-order term and if yes, remove it:
       pred_vec_chr <- sapply(pred_lst, function(x){
-        x_V <- intersect(x, input$pred_mainPP_sel)
-        if(length(x_V) > 0L){
-          return(paste(x_V, collapse = "<-->"))
+        xPP <- intersect(x, input$pred_mainPP_sel)
+        if(length(xPP) > 0L){
+          return(paste(xPP, collapse = "<-->"))
         } else{
           return(NA_character_)
         }
       })
       pred_vec_chr <- factor(pred_vec_chr, levels = unique(pred_vec_chr), exclude = NULL)
       pred_lst <- tapply(pred_lst, pred_vec_chr, function(x_lst){
-        x_NV_lst <- lapply(x_lst, intersect, y = input$pred_mainNP_sel)
-        x_isSubNV <- sapply(seq_along(x_NV_lst), function(idx){
-          any(sapply(x_NV_lst[-idx], function(x_NV){
-            all(x_NV_lst[[idx]] %in% x_NV)
+        xNP_lst <- lapply(x_lst, intersect, y = input$pred_mainNP_sel)
+        x_isSubNP <- sapply(seq_along(xNP_lst), function(idx){
+          any(sapply(xNP_lst[-idx], function(xNP){
+            all(xNP_lst[[idx]] %in% xNP)
           }))
         })
-        return(x_lst[!x_isSubNV])
+        return(x_lst[!x_isSubNP])
       }, simplify = FALSE)
       pred_lst <- unlist(pred_lst, recursive = FALSE, use.names = FALSE)
     }
     
     pred_DF <- do.call("rbind", lapply(pred_lst, function(x){
-      x_NV <- intersect(x, input$pred_mainNP_sel)
-      if(length(x_NV) > 0L){
-        x_NV <- paste(x_NV, collapse = "*")
+      xNP <- intersect(x, input$pred_mainNP_sel)
+      if(length(xNP) > 0L){
+        xNP <- paste(xNP, collapse = "*")
       } else{
-        x_NV <- NA_character_
+        xNP <- NA_character_
       }
-      x_V <- intersect(x, input$pred_mainPP_sel)
-      if(length(x_V) > 0L){
-        x_V <- paste(x_V, collapse = ":")
+      xPP <- intersect(x, input$pred_mainPP_sel)
+      if(length(xPP) > 0L){
+        xPP <- paste(xPP, collapse = ":")
       } else{
-        x_V <- NA_character_
+        xPP <- NA_character_
       }
-      data.frame("from_mainNP" = x_NV,
-                 "from_mainPP" = x_V)
+      data.frame("from_mainNP" = xNP,
+                 "from_mainPP" = xPP)
     }))
     pred_DF$from_mainPP <- factor(pred_DF$from_mainPP, levels = unique(pred_DF$from_mainPP), exclude = NULL)
     pred_DF <- aggregate(from_mainNP ~ from_mainPP, pred_DF, function(x){
@@ -1618,17 +1856,13 @@ server <- function(input, output, session){
     }
     if(length(warn_capt) > 0L){
       warn_capt <- unique(warn_capt)
-      if(identical(warn_capt, "Warning: Rows containing NAs were excluded from the model.")){
+      warn_capt[warn_capt == "Warning: Rows containing NAs were excluded from the model."] <-
+        paste("Warning: There are missing values in the data. The corresponding rows have been",
+              "omitted in the construction of the default priors. They will also be omitted when",
+              "running Stan (and also in the Stan data).")
+      for(warn_capt_i in warn_capt){
         showNotification(
-          paste("Warning: There are missing values in the data. The corresponding rows have been",
-                "omitted in the construction of the default priors. They will also be omitted when",
-                "running Stan (and also in the Stan data)."),
-          duration = NA,
-          type = "warning"
-        )
-      } else{
-        showNotification(
-          paste(warn_capt, collapse = " | "),
+          warn_capt_i,
           duration = NA,
           type = "warning"
         )
@@ -1713,16 +1947,54 @@ server <- function(input, output, session){
   # Add a custom prior if the user clicks the corresponding button:
   observeEvent(input$prior_add, {
     req(input$prior_class_sel)
+    prior_text_valid <- identical(input$prior_text, "") ||
+      any(sapply(prior_stan_fun, function(prior_stan_fun_i){
+        grepl(paste0("^", prior_stan_fun_i, "\\([[:digit:][:blank:].,]*\\)$"), input$prior_text)
+      })) ||
+      grepl(paste0("^horseshoe\\((",
+                   "(",
+                   "(df[[:blank:]]*=[[:blank:]]*)|",
+                   "(scale_global[[:blank:]]*=[[:blank:]]*)|",
+                   "(df_global[[:blank:]]*=[[:blank:]]*)|",
+                   "(scale_slab[[:blank:]]*=[[:blank:]]*)|",
+                   "(df_slab[[:blank:]]*=[[:blank:]]*)|",
+                   "(par_ratio[[:blank:]]*=[[:blank:]]*)|",
+                   "(autoscale[[:blank:]]*=[[:blank:]]*)|",
+                   "",
+                   ")",
+                   "([[:digit:][:blank:].,]*|NULL|TRUE|FALSE)",
+                   ")*\\)$"), input$prior_text) ||
+      grepl(paste0("^lasso\\((",
+                   "(",
+                   "(df[[:blank:]]*=[[:blank:]]*)|",
+                   "(scale[[:blank:]]*=[[:blank:]]*)|",
+                   "",
+                   ")",
+                   "[[:digit:][:blank:].,]*",
+                   ")*\\)$"), input$prior_text) ||
+      grepl(paste0("^dirichlet\\([[:digit:][:blank:].,:c()]*\\)$"), input$prior_text) ||
+      any(sapply(setdiff(prior_brms_fun, c("horseshoe", "lasso", "dirichlet")), function(prior_brms_fun_i){
+        grepl(paste0("^", prior_brms_fun_i, "\\([[:digit:][:blank:].]*\\)$"), input$prior_text)
+      }))
+    if(!prior_text_valid){
+      showNotification(
+        paste("Your custom prior has not been added since your text in the \"Prior distribution\"",
+              "input field could not be recognized."),
+        duration = NA,
+        type = "error"
+      )
+      return()
+    }
     prior_set_obj_add <- brms::set_prior(prior = input$prior_text,
                                          class = input$prior_class_sel,
                                          coef = input$prior_coef_sel,
                                          group = input$prior_group_sel)
-    prior_set_obj_add_ch <- merge(prior_set_obj_add[, names(prior_set_obj_add) != "prior"],
-                                  C_prior_default()[, names(C_prior_default()) != "prior"],
+    prior_set_obj_add_ch <- merge(prior_set_obj_add[, !names(prior_set_obj_add) %in% c("prior", "source")],
+                                  C_prior_default()[, !names(C_prior_default()) %in% c("prior", "source")],
                                   sort = FALSE)
     class(prior_set_obj_add_ch) <- c("brmsprior", "data.frame")
     if(!identical(prior_set_obj_add_ch,
-                  prior_set_obj_add[, names(prior_set_obj_add) != "prior"])){
+                  prior_set_obj_add[, !names(prior_set_obj_add) %in% c("prior", "source")])){
       showNotification(
         paste("Your custom prior has not been added since the combination of",
               "\"Class\", \"Coefficient\", and \"Group\" you have currently selected is",
@@ -1745,10 +2017,13 @@ server <- function(input, output, session){
   # Prior preview
   
   prior_colsToHide <- reactive({
-    return(sapply(C_prior_default(), function(x){
-      is.character(x) && all(x == "")
-    }) &
-      !grepl("^prior$|^class$|^coef$|^group$", names(C_prior_default())))
+    return(
+      names(C_prior_default()) == "source" |
+        (sapply(C_prior_default(), function(x){
+          is.character(x) && all(x == "")
+        }) &
+          !grepl("^prior$|^class$|^coef$|^group$", names(C_prior_default())))
+    )
   })
   
   output$prior_default_view <- renderTable({
@@ -1780,16 +2055,12 @@ server <- function(input, output, session){
     options(warn = warn_orig$warn)
     if(length(warn_capt) > 0L){
       warn_capt <- unique(warn_capt)
-      if(identical(warn_capt, "Warning: Rows containing NAs were excluded from the model.")){
+      warn_capt[warn_capt == "Warning: Rows containing NAs were excluded from the model."] <-
+        paste("Warning: There are missing values in the data. The corresponding rows will be",
+              "omitted when running Stan (and also in the Stan data).")
+      for(warn_capt_i in warn_capt){
         showNotification(
-          paste("Warning: There are missing values in the data. The corresponding rows will be",
-                "omitted when running Stan (and also in the Stan data)."),
-          duration = NA,
-          type = "warning"
-        )
-      } else{
-        showNotification(
-          paste(warn_capt, collapse = " | "),
+          warn_capt_i,
           duration = NA,
           type = "warning"
         )
@@ -1824,16 +2095,12 @@ server <- function(input, output, session){
     options(warn = warn_orig$warn)
     if(length(warn_capt) > 0L){
       warn_capt <- unique(warn_capt)
-      if(identical(warn_capt, "Warning: Rows containing NAs were excluded from the model.")){
+      warn_capt[warn_capt == "Warning: Rows containing NAs were excluded from the model."] <-
+        paste("Warning: There are missing values in the data. The corresponding rows have been",
+              "omitted in the Stan data. They will also be omitted when running Stan.")
+      for(warn_capt_i in warn_capt){
         showNotification(
-          paste("Warning: There are missing values in the data. The corresponding rows have been",
-                "omitted in the Stan data. They will also be omitted when running Stan."),
-          duration = NA,
-          type = "warning"
-        )
-      } else{
-        showNotification(
-          paste(warn_capt, collapse = " | "),
+          warn_capt_i,
           duration = NA,
           type = "warning"
         )
@@ -1881,7 +2148,7 @@ server <- function(input, output, session){
       inits = input$advOpts_inits,
       init_r = input$advOpts_init_r,
       open_progress = input$advOpts_open_progress,
-      save_all_pars = input$advOpts_save_all_pars,
+      save_pars = brms::save_pars(all = input$advOpts_save_all_pars),
       save_warmup = input$advOpts_save_warmup,
       control = list(adapt_delta = input$advOpts_adapt_delta,
                      max_treedepth = input$advOpts_max_treedepth)
@@ -1963,9 +2230,18 @@ server <- function(input, output, session){
     if(length(warn_capt) > 0L){
       warn_capt <- unique(warn_capt)
       warn_capt[warn_capt == "Warning: Rows containing NAs were excluded from the model."] <-
-        paste("Warning: There are missing values in the data which was used for the model.",
+        paste("Warning: There were missing values in the dataset which was used for the model.",
               "The corresponding rows have been omitted in the Stan run.")
-      warn_capt <- setdiff(warn_capt, "Compiling Stan program...")
+      warn_capt <- setdiff(warn_capt, c(
+        "Compiling Stan program...",
+        "Start sampling",
+        "recompiling to avoid crashing R session",
+        grep("Warning: There were [[:digit:]]+ divergent transitions after warmup\\. See", warn_capt, value = TRUE),
+        grep("^[[:space:]]*$", warn_capt, value = TRUE),
+        "http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup",
+        "to find out why this is a problem and how to eliminate them.",
+        "Warning: Examine the pairs() plot to diagnose sampling problems"
+      ))
       for(warn_capt_i in warn_capt){
         showNotification(
           warn_capt_i,
@@ -2033,7 +2309,7 @@ server <- function(input, output, session){
     # First: Check for failed chains:
     if(n_chains_out < n_chains_spec){
       showNotification(
-        paste("Warning: The Stan run was finished, but at least one chain exited with an error.",
+        paste("Warning: Finished running Stan, but at least one chain exited with an error.",
               "The Stan results should not be used."),
         duration = NA,
         type = "warning"
@@ -2042,14 +2318,14 @@ server <- function(input, output, session){
       # Secondly: Overall check for all MCMC diagnostics:
       if(C_all_OK){
         showNotification(
-          paste("The Stan run was finished. All MCMC diagnostics are OK (see",
+          paste("Finished running Stan. All MCMC diagnostics are OK (see",
                 "the tab \"MCMC diagnostics\" for details)."),
           duration = NA,
           type = "message"
         )
       } else{
         showNotification(
-          paste("Warning: The Stan run was finished, but at least one MCMC diagnostic is worrying (see",
+          paste("Warning: Finished running Stan, but at least one MCMC diagnostic is worrying (see",
                 "the tab \"MCMC diagnostics\" for details). In general,",
                 "this indicates that the Stan results should not be used."),
           duration = NA,
@@ -2076,7 +2352,14 @@ server <- function(input, output, session){
   })
   
   #------
-  # Date and time when Stan run was finished
+  # Matrix of posterior draws (for later usage and only run if needed)
+  
+  C_draws_mat <- reactive({
+    return(as.matrix(C_stanres()$bfit))
+  })
+  
+  #------
+  # Date and time when the Stan run was finished
   
   output$fit_date <- renderText({
     C_stanres()$bfit$fit@date
@@ -2095,6 +2378,29 @@ server <- function(input, output, session){
                    "this indicates that the Stan results should not be used."))
     }
   }, sep = "\n")
+  
+  #------
+  # Download
+  
+  output$stanout_download <- downloadHandler(
+    filename = function(){
+      return(input$stanout_download_sel)
+    },
+    content = function(file){
+      if(identical(input$stanout_download_sel, "shinybrms_post_draws_mat.csv")){
+        write.csv(C_draws_mat(),
+                  file = file,
+                  row.names = FALSE)
+      } else{
+        saveRDS(switch(input$stanout_download_sel,
+                       "shinybrms_brmsfit.rds" = C_stanres()$bfit,
+                       "shinybrms_MCMC_diagnostics.rds" = C_stanres()$diagn,
+                       "shinybrms_post_draws_mat.rds" = C_draws_mat(),
+                       "shinybrms_post_draws_arr.rds" = C_stanres()$draws_arr),
+                file = file)
+      }
+    }
+  )
   
   #------------------------
   # MCMC diagnostics
@@ -2182,38 +2488,340 @@ server <- function(input, output, session){
   # Summary
   
   output$smmry_view <- renderPrint({
-    print(C_stanres()$bfit, digits = 2, priors = TRUE, prob = 0.95, mc_se = FALSE)
+    print(C_stanres()$bfit, digits = 4, robust = TRUE, priors = TRUE, prob = 0.95, mc_se = FALSE)
   })
   
   #------------------------
-  # Download
+  # Custom summary
   
-  output$stanout_download <- downloadHandler(
-    filename = function(){
-      if(identical(input$stanout_download_sel, "draws_mat_csv")){
-        return("shinybrms_post_draws_mat.csv")
-      } else{
-        return(paste0(switch(input$stanout_download_sel,
-                             "brmsfit_obj" = "shinybrms_brmsfit",
-                             "diagn_obj" = "shinybrms_MCMC_diagnostics",
-                             "draws_mat_obj" = "shinybrms_post_draws_mat",
-                             "draws_arr_obj" = "shinybrms_post_draws_arr"),
-                      ".rds"))
+  observeEvent(input$cust_allow_link, {
+    showModal(modalDialog(
+      HTML(paste(
+        "These are the characters and character groups which are allowed in the custom expression on",
+        "tab \"Custom summary\":",
+        tags$ul(
+          lapply(cust_allow_all, function(char_i){
+            if(identical(char_i, " ")){
+              return(tags$li(HTML(paste(code(char_i), "&nbsp;(blank space)"))))
+            }
+            return(tags$li(code(char_i)))
+          })
+        )
+      )),
+      title = "Allowed characters and character groups",
+      footer = modalButton("Close"),
+      # size = "m",
+      easyClose = TRUE
+    ))
+  })
+  
+  observeEvent(input$cust_help_link, {
+    showModal(modalDialog(
+      HTML(paste(
+        "Help pages for R functions which may be used in the custom expression:",
+        tags$ul(
+          tags$li(a("\"Arithmetic Operators\"",
+                    href = "https://stat.ethz.ch/R-manual/R-devel/library/base/html/Arithmetic.html",
+                    target = "_blank")),
+          tags$li(a("\"Relational Operators\"",
+                    href = "https://stat.ethz.ch/R-manual/R-devel/library/base/html/Comparison.html",
+                    target = "_blank")),
+          tags$li(a("\"Logical Operators\"",
+                    href = "https://stat.ethz.ch/R-manual/R-devel/library/base/html/Logic.html",
+                    target = "_blank")),
+          tags$li(a("\"Miscellaneous Mathematical Functions\"",
+                    href = "https://stat.ethz.ch/R-manual/R-devel/library/base/html/MathFun.html",
+                    target = "_blank"),
+                  "(", code("abs()", .noWS = "before"), "and", code("sqrt()", .noWS = "after"), ")"),
+          tags$li(a("\"Sign Function\"",
+                    href = "https://stat.ethz.ch/R-manual/R-devel/library/base/html/sign.html",
+                    target = "_blank")),
+          tags$li(a("\"Rounding of Numbers\"",
+                    href = "https://stat.ethz.ch/R-manual/R-patched/library/base/html/Round.html",
+                    target = "_blank")),
+          tags$li(a("\"Cumulative Sums, Products, and Extremes\"",
+                    href = "https://stat.ethz.ch/R-manual/R-devel/library/base/html/cumsum.html",
+                    target = "_blank")),
+          tags$li(a("\"Logarithms and Exponentials\"",
+                    href = "https://stat.ethz.ch/R-manual/R-devel/library/base/html/Log.html",
+                    target = "_blank")),
+          tags$li(a("\"Trigonometric Functions\"",
+                    href = "https://stat.ethz.ch/R-manual/R-devel/library/base/html/Trig.html",
+                    target = "_blank")),
+          tags$li(a("\"Special Functions of Mathematics\"",
+                    href = "https://stat.ethz.ch/R-manual/R-devel/library/base/html/Special.html",
+                    target = "_blank"),
+                  "(", code("gamma()", .noWS = "before"), "etc.)"),
+          tags$li(a("\"Maxima and Minima\"",
+                    href = "https://stat.ethz.ch/R-manual/R-devel/library/base/html/Extremes.html",
+                    target = "_blank"))
+        ),
+        "Further possibly helpful pages:",
+        tags$ul(
+          tags$li(a("Section \"Operators\" in the \"R Language Definition\"",
+                    href = "https://cran.r-project.org/doc/manuals/r-release/R-lang.html#Operators",
+                    target = "_blank")),
+          tags$li(a("\"The R Reference Index\"",
+                    href = "",
+                    target = "_blank"))
+        )
+      )),
+      title = "Help pages for R functions",
+      footer = modalButton("Close"),
+      # size = "m",
+      easyClose = TRUE
+    ))
+  })
+  
+  C_pars <- reactive({
+    return(brms::parnames(C_stanres()$bfit))
+  })
+  
+  observe({
+    if(inherits(try(C_pars(), silent = TRUE), "try-error")){
+      updateSelectInput(session, "par_sel",
+                        choices = c("Choose parameter name ..." = ""))
+      return()
+    }
+    updateSelectInput(session, "par_sel",
+                      choices = c("Choose parameter name ..." = "",
+                                  C_pars()))
+  })
+  
+  observeEvent(input$par_add, {
+    req(input$par_sel)
+    updateTextInput(session, "cust_text",
+                    value = paste0(input$cust_text, "`", input$par_sel, "`"))
+  })
+  
+  C_cust <- reactiveVal(cust_smmry_empty)
+  
+  # Reset C_cust() when C_stanres() has changed (and also reset input$cust_text):
+  observeEvent(try(C_stanres(), silent = TRUE), {
+    C_cust(cust_smmry_empty)
+    updateTextInput(session, "cust_text",
+                    value = "")
+  })
+  
+  observeEvent(input$cust_act, {
+    # Check that there is at least one parameter name in 'input$cust_text':
+    if(!grepl(paste(paste0("`", C_pars(), "`"), collapse = "|"), input$cust_text)){
+      showNotification(
+        paste("Your custom summary has not been calculated since your custom expression did not contain",
+              "at least one parameter."),
+        duration = NA,
+        type = "error"
+      )
+      return()
+    }
+    # Check for forbidden code:
+    cust_text_valid <- grepl(
+      paste0("^(", paste(cust_allow_grp, collapse = "|"), ")*$"),
+      gsub(paste(paste0("`", C_pars(), "`"), collapse = "|"), "", input$cust_text)
+    )
+    if(!cust_text_valid){
+      showNotification(
+        "Your custom summary has not been calculated since your custom expression was invalid.",
+        duration = NA,
+        type = "error"
+      )
+      return()
+    }
+    # Check that "C_pars()" contains the correct parameter names:
+    if(!identical(C_pars(), colnames(C_draws_mat()))){
+      showNotification(
+        "Unexpected parameter names. Please report this.",
+        duration = NA,
+        type = "error"
+      )
+      return()
+    }
+    C_cust(rbind(C_cust(), with(as.data.frame(C_draws_mat()), {
+      cust_res <- try(eval(parse(text = input$cust_text)), silent = TRUE)
+      if(inherits(cust_res, "try-error")){
+        showNotification(
+          "The evaluation of your custom expression failed.",
+          duration = NA,
+          type = "error"
+        )
+        return(cust_smmry_empty)
       }
+      cust_q <- quantile(cust_res, probs = c(0.025, 0.25, 0.5, 0.75, 0.975))
+      names(cust_q) <- paste0("Q", sub("%$", "", names(cust_q)))
+      names(cust_q)[names(cust_q) == "Q50"] <- "median"
+      cust_smmry <- cbind(data.frame("Name" = input$cust_name), as.data.frame(t(cust_q)), data.frame(
+        "MAD" = mad(cust_res),
+        "mean" = mean(cust_res),
+        "SD" = sd(cust_res)
+      ))
+      return(cust_smmry)
+    })))
+  })
+  
+  output$cust_view <- renderTable({
+    invisible(try(C_stanres(), silent = TRUE)) # Only used for making output$cust_view reactive on C_stanres() (so that output$cust_view grays out while recalculating C_stanres()).
+    C_cust()
+  })
+  
+  output$cust_smmry_download <- downloadHandler(
+    filename = "shinybrms_custom_summary.csv",
+    content = function(file){
+      write.csv(C_cust(),
+                file = file,
+                row.names = FALSE)
+    }
+  )
+  
+  #------------------------
+  # Conditional effects
+  
+  # NOTE: suffix "ff" stands for "from fit".
+  
+  # The "brmsformula" from the fitted model object:
+  C_bformula_ff <- reactive({
+    return(formula(C_stanres()$bfit))
+  })
+  
+  # A reactive object which will contain the labels of the group terms (excluding those with at
+  # least two colons):
+  termlabs_PP_grp <- reactiveVal() # NOTE: reactiveVal() is equivalent to reactiveVal(NULL).
+  
+  observe({
+    if(inherits(try(C_bformula_ff(), silent = TRUE), "try-error")){
+      termlabs_PP_grp(NULL)
+      updateSelectInput(session, "term_sel",
+                        choices = c("Choose predictor term ..." = ""))
+      return()
+    }
+    
+    #------------
+    # Get term labels
+    
+    termlabs <- labels(terms(formula(C_bformula_ff())))
+    
+    #------------
+    # Nonpooled effects
+    
+    termlabs_NP <- grep("\\|", termlabs, value = TRUE, invert = TRUE)
+    termlabs_NP_main <- grep(":", termlabs_NP, value = TRUE, invert = TRUE)
+    termlabs_NP_IA <- setdiff(termlabs_NP, termlabs_NP_main)
+    termlabs_NP_IA2 <- grep(":.*:", termlabs_NP_IA, value = TRUE, invert = TRUE)
+    termlabs_NP_IA2_rev <- unlist(sapply(strsplit(termlabs_NP_IA2, split = ":"), function(termlabs_NP_IA2_i){ # NOTE: unlist() is only needed for the special case 'identical(length(termlabs_NP_IA2), 0L)'.
+      return(paste(rev(termlabs_NP_IA2_i), collapse = ":"))
+    }))
+    
+    #------------
+    # Partially pooled effects
+    
+    termlabs_PP <- setdiff(termlabs, termlabs_NP)
+    termlabs_PP_split <- strsplit(termlabs_PP, "[[:blank:]]*\\|[[:blank:]]*")
+    stopifnot(all(lengths(termlabs_PP_split) == 2L))
+    termlabs_PP_grp_tmp <- sapply(termlabs_PP_split, "[[", 2)
+    termlabs_PP_grp_tmp <- grep(":.*:", termlabs_PP_grp_tmp, value = TRUE, invert = TRUE)
+    termlabs_PP_grp(termlabs_PP_grp_tmp)
+    termlabs_PP_IA <- unlist(lapply(termlabs_PP_split, function(termlabs_PP_i){
+      retermlabs_PP_i <- labels(terms(as.formula(paste("~", termlabs_PP_i[1]))))
+      ### May only be used when depending on R >= 4.0.1 (which should probably be avoided since
+      ### R 4.0.0 introduced a lot of big changes):
+      # return(paste0(retermlabs_PP_i, ":", termlabs_PP_i[2], recycle0 = TRUE))
+      ### 
+      ### When not depending on R >= 4.0.1:
+      if(identical(length(retermlabs_PP_i), 0L)){
+        return(character())
+      }
+      return(paste0(retermlabs_PP_i, ":", termlabs_PP_i[2]))
+      ### 
+    }))
+    termlabs_PP_IA2 <- grep(":.*:", termlabs_PP_IA, value = TRUE, invert = TRUE)
+    termlabs_PP_IA2_rev <- unlist(sapply(strsplit(termlabs_PP_IA2, split = ":"), function(termlabs_PP_IA2_i){ # NOTE: unlist() is only needed for the special case 'identical(length(termlabs_PP_IA2), 0L)'.
+      return(paste(rev(termlabs_PP_IA2_i), collapse = ":"))
+    }))
+    
+    #------------
+    # Update choices for input$term_sel
+    
+    term_choices <- c(termlabs_NP_main, termlabs_NP_IA2, termlabs_NP_IA2_rev,
+                      termlabs_PP_grp_tmp, termlabs_PP_IA2, termlabs_PP_IA2_rev)
+    updateSelectInput(session, "term_sel",
+                      choices = c("Choose predictor term ..." = "",
+                                  term_choices))
+  })
+  
+  gg_ceff <- reactive({
+    req(input$term_sel)
+    re_formula_ceff <- NA
+    term_sel_PP <- intersect(input$term_sel, termlabs_PP_grp())
+    if(identical(length(term_sel_PP), 1L)){
+      re_formula_ceff <- as.formula(paste("~ (1 |", term_sel_PP, ")"))
+    } else if(identical(length(term_sel_PP), 0L) && grepl(":", input$term_sel)){
+      term_sel_split <- strsplit(input$term_sel, split = ":")[[1]]
+      stopifnot(length(term_sel_split) <= 2L)
+      term_sel_split_PP <- intersect(term_sel_split, termlabs_PP_grp())
+      stopifnot(length(term_sel_split_PP) <= 1L)
+      if(identical(length(term_sel_split_PP), 1L)){
+        term_sel_split_NP <- setdiff(term_sel_split, term_sel_split_PP)
+        stopifnot(identical(length(term_sel_split_NP), 1L))
+        re_formula_ceff <- as.formula(paste("~ (1 +", term_sel_split_NP, "|", term_sel_split_PP, ")"))
+      }
+    }
+    # set.seed(<seed>) # Not necessary here since there is no sampling taking place (since argument 're_formula' of brms::conditional_effects() here only contains the group term which is involved in argument 'effects' (since argument 're_formula' of brms::conditional_effects() is set to only those partially pooled effects which are plotted (or also the corresponding partially pooled intercepts, if partially pooled slopes are plotted))).
+    C_ceff <- brms::conditional_effects(
+      C_stanres()$bfit,
+      effects = input$term_sel,
+      re_formula = re_formula_ceff
+      # sample_new_levels = "gaussian" # Not necessary here since there is no sampling taking place (since argument 're_formula' of brms::conditional_effects() here only contains the group term which is involved in argument 'effects' (since argument 're_formula' of brms::conditional_effects() is set to only those partially pooled effects which are plotted (or also the corresponding partially pooled intercepts, if partially pooled slopes are plotted))).
+    )
+    if(!requireNamespace("ggplot2", quietly = TRUE)){
+      showNotification(
+        HTML(paste("Please install package", code("ggplot2"), "for full plotting functionality.")),
+        duration = NA,
+        type = "warning"
+      )
+      C_ceff_plot_list <- plot(C_ceff)
+    } else{
+      C_ceff_plot_list <- plot(C_ceff, theme = ggplot2::theme_gray(base_size = 16))
+    }
+    if(length(C_ceff_plot_list) > 1L){
+      showNotification(
+        HTML(paste(
+          "Function", code("brms:::plot.brms_conditional_effects()"), "returned multiple plot objects.",
+          "Only plotting the first one. Please report this."
+        )),
+        duration = NA,
+        type = "warning"
+      )
+    }
+    return(C_ceff_plot_list[[1]])
+  })
+  
+  # Only for getting the width in pixels corresponding to argument 'width = "100%"' of plotOutput():
+  output$size_aux <- renderPlot({
+    req(FALSE)
+  })
+  
+  output$ceff_plot <- renderPlot({
+    gg_ceff()
+  },
+  width = function() session$clientData$output_size_aux_width,
+  height = function() session$clientData$output_size_aux_width * 0.618)
+  
+  output$ceff_download <- downloadHandler(
+    filename = function(){
+      paste0("shinybrms_cond_eff.", input$ceff_download_sel)
     },
     content = function(file){
-      if(identical(input$stanout_download_sel, "draws_mat_csv")){
-        write.csv(as.matrix(C_stanres()$bfit),
-                  file = file,
-                  row.names = FALSE)
-      } else{
-        saveRDS(switch(input$stanout_download_sel,
-                       "brmsfit_obj" = C_stanres()$bfit,
-                       "diagn_obj" = C_stanres()$diagn,
-                       "draws_mat_obj" = as.matrix(C_stanres()$bfit),
-                       "draws_arr_obj" = C_stanres()$draws_arr),
-                file = file)
+      if(!requireNamespace("ggplot2", quietly = TRUE)){
+        showNotification(
+          HTML(paste("Package", code("ggplot2"), "needed. Please install it.")),
+          duration = NA,
+          type = "error"
+        )
+        return()
       }
+      ggplot2::ggsave(filename = file,
+                      plot = gg_ceff(),
+                      width = session$clientData$output_size_aux_width / 100, # In fact, this should be divided by 72 instead of 100, but that gives a plot which doesn't match the original plot size (in inches) in the app.
+                      height = session$clientData$output_size_aux_width * 0.618 / 100) # In fact, this should be divided by 72 instead of 100, but that gives a plot which doesn't match the original plot size (in inches) in the app.
     }
   )
   
@@ -2245,8 +2853,8 @@ server <- function(input, output, session){
           seed_PPD_tmp <- NULL
         }
         
-        # Call "shinystan" from an external R process (needed to allow opening another Shiny app
-        # (here "shinystan") from within this Shiny app ("shinybrms")):
+        # Call "shinystan" from an external R process (needed to allow opening another "shiny" app
+        # (here "shinystan") from within the current "shiny" app (here "shinybrms")):
         callr::r(
           function(brmsfit_obj, browser_callr, seed_callr){
             browser_callr_orig <- options(browser = browser_callr)
@@ -2265,14 +2873,14 @@ server <- function(input, output, session){
         )
       } else{
         showNotification(
-          "Package \"callr\" needed. Please install it.",
+          HTML(paste("Package", code("callr"), "needed. Please install it.")),
           duration = NA,
           type = "error"
         )
       }
     } else{
       showNotification(
-        "Package \"shinystan\" needed. Please install it.",
+        HTML(paste("Package", code("shinystan"), "needed. Please install it.")),
         duration = NA,
         type = "error"
       )
