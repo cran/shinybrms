@@ -1,3 +1,14 @@
+# **shinybrms** 1.5.1
+
+## Minor changes
+
+  - Updated some references.
+  - Now using `parallel::detectCores(logical = FALSE)` instead of
+    `parallel::detectCores()` when determining the default number of cores for
+    the Stan run.
+  - Improved help texts in the UI.
+  - Renamed tab "Summary" (page "Posterior") to "Default summary".
+
 # **shinybrms** 1.5.0
 
 ## Major changes
@@ -5,7 +16,8 @@
   - Use the automatic `rstan::rstan_options("javascript" = FALSE)` fix
     on *all* platforms (not only Windows) if **rstan** version 2.21.1 or
     above is used.
-  - Added support for conditional-effects plots (see [`brms::conditional_effects()`](https://paul-buerkner.github.io/brms/reference/conditional_effects.brmsfit.html)).
+  - Added support for conditional-effects plots (see
+    [`brms::conditional_effects()`](https://paul-buerkner.github.io/brms/reference/conditional_effects.brmsfit.html)).
   - Added the possibility to perform custom posterior summary analyses,
     e.g. for a transformation of parameters or for a sum of parameters.
 
@@ -29,7 +41,8 @@
 
 ## Bug fixes
 
-  - Fixed a possible security issue for the text input field "Prior distribution".
+  - Fixed a possible security issue for the text input field "Prior
+    distribution".
 
 # **shinybrms** 1.4.1
 

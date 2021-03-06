@@ -1,7 +1,7 @@
 Package: shinybrms
 Title: Graphical User Interface ('shiny' App) for 'brms'
-Version: 1.5.0
-Date: 2020-11-20
+Version: 1.5.1
+Date: 2021-03-06
 Authors@R: 
     c(person(given = "Frank",
          family = "Weber",
@@ -34,7 +34,7 @@ Imports: shiny (>= 1.4.0), brms (>= 2.14.0), rstan (>= 2.19.3)
 Suggests: ggplot2, shinystan (>= 2.4.0), callr (>= 3.4.0), rstanarm,
         MASS, lme4, testthat, shinytest
 NeedsCompilation: no
-Packaged: 2020-11-21 14:11:17 UTC; frank
+Packaged: 2021-03-06 16:56:00 UTC; frank
 Author: Frank Weber [aut, cre] (<https://orcid.org/0000-0002-4842-7922>),
   Thomas Park [ctb, cph] ('Bootswatch' theme "United"),
   Twitter, Inc. [ctb, cph] ('Bootstrap' (basis for the 'Bootswatch' theme
@@ -42,4 +42,4 @@ Author: Frank Weber [aut, cre] (<https://orcid.org/0000-0002-4842-7922>),
   Google, LLC [ctb, cph] ("Open Sans" font)
 Maintainer: Frank Weber <fweber144@protonmail.com>
 Repository: CRAN
-Date/Publication: 2020-11-21 15:00:02 UTC
+Date/Publication: 2021-03-06 17:10:03 UTC
