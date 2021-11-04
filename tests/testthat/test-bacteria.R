@@ -1,6 +1,11 @@
 library(shinytest)
 
-test_that("Results of the Stan run for the \"bacteria\" example from the \"shinybrms\" vignette on Linux", {
+# Note: In fact, it would be more desirable to specify argument `suffix` in the
+# shinytest::testApp() calls below (and to have a single file "bacteria.R"), but
+# this has the downside that the shinytests then cannot be run directly via
+# RStudio's "Run Tests" button (in an opened shinytest file).
+
+test_that("Stan run for the \"bacteria\" example on Linux", {
   skip_on_cran()
   skip_on_ci()
   skip_on_covr()
@@ -12,7 +17,7 @@ test_that("Results of the Stan run for the \"bacteria\" example from the \"shiny
   shinytest::expect_pass(shinytest::testApp(app_path, testnames = "bacteria_run_linux.R"))
 })
 
-test_that("Results of the Stan run for the \"bacteria\" example from the \"shinybrms\" vignette on Windows", {
+test_that("Stan run for the \"bacteria\" example on Windows", {
   skip_on_cran()
   skip_on_ci()
   skip_on_covr()
