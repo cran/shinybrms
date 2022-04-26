@@ -1,5 +1,5 @@
 # shinybrms: Graphical User Interface ('shiny' App) for 'brms'
-# Copyright (C) 2021  Frank Weber
+# Copyright (C) 2022  Frank Weber
 #   
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,57 @@ if (isTRUE(getOption("shiny.testmode"))) {
   Sys.setlocale("LC_COLLATE", "C")
 }
 
+# Basic (not advanced) distributional families:
+distFams_basic <- list(
+  "Choose distributional family ..." = "",
+  "Continuous outcome:" = c("Gaussian (normal)" = "gaussian"),
+  "Binary outcome:" = c("Bernoulli" = "bernoulli"),
+  "Count data outcome:" = c("Negative binomial" = "negbinomial")
+)
+
+# Basic and advanced distributional families:
+distFams_adv <- distFams_basic
+names(distFams_adv)[names(distFams_adv) == "Continuous outcome:"] <- 
+  "Continuous outcome on the real line:"
+distFams_adv$"Continuous outcome on the real line:" <- c(
+  distFams_adv$"Continuous outcome on the real line:",
+  "Student-t" = "student",
+  "Skew normal" = "skew_normal",
+  "Asymmetric Laplace" = "asym_laplace"
+)
+distFams_adv$"Count data outcome:" <- c(
+  distFams_adv$"Count data outcome:",
+  "Negative binomial with hurdle" = "hurdle_negbinomial",
+  "Negative binomial with zero-inflation" = "zero_inflated_negbinomial",
+  "Poisson" = "poisson",
+  "Poisson with hurdle" = "hurdle_poisson",
+  "Poisson with zero-inflation" = "zero_inflated_poisson",
+  "Geometric" = "geometric"
+)
+distFams_adv$"Continuous outcome on the positive real line:" <- c(
+  "Log-normal" = "lognormal",
+  "Log-normal with hurdle" = "hurdle_lognormal",
+  "Gamma" = "Gamma",
+  "Gamma with hurdle" = "hurdle_gamma",
+  "Inverse Gaussian" = "inverse.gaussian",
+  "Weibull" = "weibull",
+  "Exponential" = "exponential",
+  "Frechet" = "frechet",
+  "Generalized extreme value" = "gen_extreme_value"
+)
+distFams_adv$"Proportion as outcome:" <- c(
+  "Beta" = "Beta",
+  "Beta with zero-inflation" = "zero_inflated_beta",
+  "Beta with zero-one-inflation" = "zero_one_inflated_beta"
+)
+distFams_adv$"Circular outcome:" <- c(
+  "von Mises" = "von_mises"
+)
+distFams_adv$"Response time outcome:" <- c(
+  "Shifted log-normal" = "shifted_lognormal",
+  "Exponentially modified Gaussian" = "exgaussian"
+)
+
 san_prior_tab_nms <- function(x) {
   x <- sub("^prior$", "Prior", x)
   x <- sub("^class$", "Class", x)
@@ -43,12 +94,15 @@ san_prior_tab_nms <- function(x) {
   x <- sub("^dpar$", "Distributional parameter", x)
   x <- sub("^nlpar$", "Non-linear parameter", x)
   x <- sub("^bound$", "Bound", x)
+  x <- sub("^lb$", "Lower bound", x)
+  x <- sub("^ub$", "Upper bound", x)
   x <- sub("^source$", "Source", x)
   return(x)
 }
 
 # Stan function names which may be used for specifying a prior distribution:
-prior_stan_fun <- c(
+# Unbounded distributions:
+prior_stan_fun_unbounded <- c(
   "normal",
   "std_normal",
   "exp_mod_normal",
@@ -58,8 +112,10 @@ prior_stan_fun <- c(
   "double_exponential",
   "logistic",
   "gumbel",
-  "skew_double_exponential",
-  ### Requiring a lower bound (which is checked by brms:::check_prior_content()):
+  "skew_double_exponential"
+)
+# Bounded distributions:
+prior_stan_fun_lb0 <- c(
   "lognormal",
   "chi_square",
   "inv_chi_square",
@@ -69,18 +125,30 @@ prior_stan_fun <- c(
   "inv_gamma",
   "weibull",
   "frechet",
-  "rayleigh",
+  "rayleigh"
+)
+prior_stan_fun_lbx <- c(
   "pareto",
   "pareto_type_2",
-  "wiener",
-  ### 
-  ### Requiring a lower bound and an upper bound (which is checked by brms:::check_prior_content()):
+  "wiener"
+)
+prior_stan_fun_lb_ub <- c(
   "beta",
   "beta_proportion",
   "von_mises",
   "uniform"
+)
+prior_stan_fun_bounded <- c(
+  ### Requiring a lower bound (which is checked by brms:::check_prior_content()):
+  prior_stan_fun_lb0,
+  prior_stan_fun_lbx,
+  ### 
+  ### Requiring a lower bound and an upper bound (which is checked by brms:::check_prior_content()):
+  prior_stan_fun_lb_ub
   ### 
 )
+# Combined:
+prior_stan_fun <- c(prior_stan_fun_unbounded, prior_stan_fun_bounded)
 
 # brms function names which may be used for specifying a prior distribution:
 prior_brms_fun <- c(
@@ -359,17 +427,10 @@ ui <- navbarPage(
                     choices = c("Choose outcome ..." = ""),
                     selectize = TRUE),
         selectInput("dist_sel", "Distributional family for the outcome:",
-                    choices = list(
-                      "Choose distributional family ..." = "",
-                      "Continuous outcome:" =
-                        c("Gaussian (normal)" = "gaussian"),
-                      "Binary outcome:" =
-                        c("Bernoulli with logit link" = "bernoulli"),
-                      "Count data outcome:" =
-                        c("Negative binomial" = "negbinomial")
-                    ),
+                    choices = distFams_basic,
                     selectize = TRUE),
-        strong("Parameters (with corresponding link functions) specific to this distributional family:"),
+        checkboxInput("show_advFams", label = "Show advanced distributional families"),
+        strong("Parameters specific to this distributional family, with their link function as used in shinybrms:"),
         tableOutput("dist_link"),
         helpText(
           p("For details concerning the link functions, see the help for the R function",
@@ -382,8 +443,8 @@ ui <- navbarPage(
               target = "_blank",
               .noWS = "after"),
             ". Note that for each parameter, the link function only applies if this parameter is",
-            "actually modeled by (nonconstant) predictors. Currently, this is only supported",
-            "for the location parameter (e.g.,", code("mu"), "for a Gaussian distribution)."),
+            "actually modeled by (nonconstant) predictors. In", strong("shinybrms", .noWS = "after"),
+            ", this is currently only supported for the location parameter", code("mu", .noWS = "after"), "."),
           p("For details concerning the remaining (family-specific) parameters, see the help for the R function ",
             a(HTML(paste(code("brms::set_prior()"))),
               href = "https://paul-buerkner.github.io/brms/reference/set_prior.html",
@@ -735,7 +796,7 @@ ui <- navbarPage(
             condition = "input.show_standata",
             verbatimTextOutput("standata_view", placeholder = TRUE),
           ),
-          downloadButton("standata_download", "Download Stan data")
+          downloadButton("standata_download", "Download Stan data (RDS file)")
         ),
         wellPanel(
           h3("Advanced options"),
@@ -787,7 +848,7 @@ ui <- navbarPage(
                       target = "_blank", .noWS = "after"),
                     ", together with the",
                     a("\"CmdStan User's Guide\"",
-                      href = "https://mc-stan.org/docs/2_28/cmdstan-guide/index.html",
+                      href = "https://mc-stan.org/docs/2_29/cmdstan-guide/index.html",
                       target = "_blank", .noWS = "after"),
                     "."
                   )
@@ -845,7 +906,7 @@ ui <- navbarPage(
                      numericInput("advOpts_thin", "Thinning rate:",
                                   value = 1L, step = 1L, min = 1L)),
               column(5, offset = 1,
-                     radioButtons("advOpts_inits", "Initial values:",
+                     radioButtons("advOpts_init", "Initial values:",
                                   choices = list("Random" = "random", "Zero" = "0"),
                                   inline = TRUE),
                      numericInput("advOpts_init_r",
@@ -960,8 +1021,8 @@ ui <- navbarPage(
             "automatically. Note that these are", em("basic"), "guidelines", HTML("&ndash;"),
             "false positive and false negative alarms are possible and",
             "in some situations, false alarms are more likely than in others.",
-            "For details concerning the MCMC diagnostics used here, see the",
-            a("\"Brief Guide to Stan's Warnings\"",
+            "For details concerning the MCMC diagnostics used here, see",
+            a("\"Runtime warnings and convergence problems\"",
               href = "https://mc-stan.org/misc/warnings.html",
               target = "_blank",
               .noWS = "after"),
@@ -975,8 +1036,9 @@ ui <- navbarPage(
               href = "https://doi.org/10.1214/20-BA1221",
               target = "_blank",
               .noWS = "after"),
-            ". The \"Brief Guide to Stan's Warnings\" covers all MCMC diagnostics used here and",
-            "gives some advice on what to do if they indicate problems.",
+            ". The document \"Runtime warnings and convergence problems\" covers",
+            "all MCMC diagnostics used here and gives some advice on what to do",
+            "if they indicate problems.",
             "Betancourt (2018) focuses on the HMC-specific diagnostics,",
             "whereas Vehtari et al. (2021) focus on the general MCMC diagnostics."),
           p("The HMC-specific diagnostics are:",
@@ -1078,7 +1140,7 @@ ui <- navbarPage(
                  )),
         br(),
         verbatimTextOutput("smmry_view", placeholder = TRUE),
-        downloadButton("smmry_download", "Download default summary"),
+        downloadButton("smmry_download", "Download default summary (text file)"),
         br(),
         br()
       ),
@@ -1126,7 +1188,7 @@ ui <- navbarPage(
         helpText("Note: All columns contain", em("posterior"), "summary quantities.",
                  "In particular, the columns starting with \"Q\" contain the corresponding",
                  "posterior percentiles and column \"MAD\" contains the posterior median absolute deviation."),
-        downloadButton("cust_smmry_download", "Download custom summary"),
+        downloadButton("cust_smmry_download", "Download custom summary (CSV file)"),
         br(),
         br()
       ),
@@ -1265,7 +1327,7 @@ ui <- navbarPage(
       wellPanel(
         h3("Basic information"),
         tags$ul(
-          tags$li(strong("Author:"),
+          tags$li(strong("Author and maintainer:"),
                   "Frank Weber (ORCID iD:",
                   a("0000-0002-4842-7922",
                     href = "https://orcid.org/0000-0002-4842-7922",
@@ -1277,18 +1339,30 @@ ui <- navbarPage(
                     .noWS = "after"),
                   ")"),
           tags$li(strong("Contributors:"),
+                  "Katja Ickstadt (ORCID iD:",
+                  a("0000-0001-5157-2496",
+                    href = "https://orcid.org/0000-0001-5157-2496",
+                    target = "_blank",
+                    .noWS = "after"),
+                  ");",
+                  "Änne Glass (ORCID iD:",
+                  a("0000-0002-7715-9058",
+                    href = "https://orcid.org/0000-0002-7715-9058",
+                    target = "_blank",
+                    .noWS = "after"),
+                  ");",
                   "Thomas Park (for the Bootswatch theme \"United\");",
                   "Twitter, Inc. (for Bootstrap, the basis for the Bootswatch theme \"United\");",
                   "Google, LLC (for the \"Open Sans\" font)"),
           tags$li(strong("Version:"),
-                  "1.6.0"),
+                  "1.7.0"),
           tags$li(strong("Date:"),
-                  "November 04, 2021"),
+                  "April 26, 2022"),
           tags$li(strong("Citation:"),
-                  "Frank Weber (2021).",
+                  "Frank Weber (2022).",
                   em("shinybrms: Graphical User Interface ('shiny' App)",
                      "for 'brms'."),
-                  "R package, version 1.6.0. URL:",
+                  "R package, version 1.7.0. URL:",
                   a("https://fweber144.github.io/shinybrms/",
                     href = "https://fweber144.github.io/shinybrms/",
                     target = "_blank",
@@ -1752,6 +1826,18 @@ server <- function(input, output, session) {
   
   #### Distributional family ------------------------------------------------
   
+  observeEvent(input$show_advFams, {
+    if (input$show_advFams) {
+      dist_choices <- distFams_adv
+    } else {
+      dist_choices <- distFams_basic
+    }
+    dist_slctd <- isolate(input$dist_sel)
+    updateSelectInput(session, "dist_sel",
+                      choices = dist_choices,
+                      selected = dist_slctd)
+  })
+  
   C_family <- reactive({
     req(input$dist_sel)
     return(brms::brmsfamily(family = input$dist_sel))
@@ -2194,6 +2280,8 @@ server <- function(input, output, session) {
   # Add a custom prior if the user clicks the corresponding button:
   observeEvent(input$prior_add, {
     req(input$prior_class_sel)
+    # For security reasons, perform a first check of the text entered in the
+    # "Prior distribution" input field:
     prior_text_valid <- identical(input$prior_text, "") ||
       any(sapply(prior_stan_fun, function(prior_stan_fun_i) {
         grepl(paste0("^", prior_stan_fun_i, "\\([[:digit:][:blank:].,]*\\)$"), input$prior_text)
@@ -2225,32 +2313,82 @@ server <- function(input, output, session) {
       }))
     if (!prior_text_valid) {
       showNotification(
-        paste("Your custom prior has not been added since your text in the \"Prior distribution\"",
-              "input field could not be recognized."),
+        paste("Your custom prior has not been added since your text in the",
+              "\"Prior distribution\" input field could not be recognized."),
         duration = NA,
         type = "error"
       )
       return()
     }
+    # Define the custom prior:
     prior_set_obj_add <- brms::set_prior(prior = input$prior_text,
                                          class = input$prior_class_sel,
                                          coef = input$prior_coef_sel,
                                          group = input$prior_group_sel)
-    prior_set_obj_add_ch <- merge(prior_set_obj_add[, !names(prior_set_obj_add) %in% c("prior", "source")],
-                                  C_prior_default()[, !names(C_prior_default()) %in% c("prior", "source")],
-                                  sort = FALSE)
+    # Check for existence in the table of default priors:
+    cols_not2compare <- c("prior", "lb", "ub", "source")
+    prior_set_obj_add_ch <- merge(
+      prior_set_obj_add[!names(prior_set_obj_add) %in% cols_not2compare],
+      C_prior_default()[!names(C_prior_default()) %in% cols_not2compare],
+      sort = FALSE
+    )
     class(prior_set_obj_add_ch) <- c("brmsprior", "data.frame")
     if (!identical(prior_set_obj_add_ch,
-                   prior_set_obj_add[, !names(prior_set_obj_add) %in% c("prior", "source")])) {
+                   prior_set_obj_add[!names(prior_set_obj_add) %in% cols_not2compare])) {
       showNotification(
         paste("Your custom prior has not been added since the combination of",
-              "\"Class\", \"Coefficient\", and \"Group\" you have currently selected is",
-              "not contained in the table of the default priors."),
+              "\"Class\", \"Coefficient\", and \"Group\" you have currently selected",
+              "could not be found in the table of the default priors."),
         duration = NA,
         type = "error"
       )
       return()
     }
+    # Basic sanity checks with respect to bounds (necessary until arguments `lb`
+    # and `ub` of brms::set_prior() are supported by shinybrms):
+    prior_classes_unbounded <- c("Intercept", "b")
+    if (input$prior_class_sel %in% prior_classes_unbounded &&
+        any(sapply(prior_stan_fun_bounded, function(prior_stan_fun_i) {
+          grepl(paste0("^", prior_stan_fun_i, "\\([[:digit:][:blank:].,]*\\)$"), input$prior_text)
+        }))) {
+      showNotification(
+        paste("For parameter classes \"Intercept\" and \"b\", only unbounded",
+              "prior distributions are allowed."),
+        duration = NA,
+        type = "error"
+      )
+      return()
+    }
+    prior_classes_lb0 <- c("sd", "sigma", "shape")
+    if (input$prior_class_sel %in% prior_classes_lb0 &&
+        any(sapply(c(prior_stan_fun_lbx, prior_stan_fun_lb_ub), function(prior_stan_fun_i) {
+          grepl(paste0("^", prior_stan_fun_i, "\\([[:digit:][:blank:].,]*\\)$"), input$prior_text)
+        }))) {
+      showNotification(
+        paste("For parameter classes \"sigma\" and \"sd\", only unbounded",
+              "prior distributions and prior distributions having a",
+              "lower bound of zero are allowed."),
+        duration = NA,
+        type = "error"
+      )
+      return()
+    }
+    if (!input$prior_class_sel %in% c(prior_classes_unbounded, prior_classes_lb0) &&
+        any(sapply(prior_stan_fun_bounded, function(prior_stan_fun_i) {
+          grepl(paste0("^", prior_stan_fun_i, "\\([[:digit:][:blank:].,]*\\)$"), input$prior_text)
+        }))) {
+      showNotification(
+        HTML(paste(
+          "You have entered a bounded prior distribution for a parameter class for",
+          "which", strong("shinybrms"), "currently does not have automated boundary",
+          "checks. Please verify yourself that the bound(s) set in the \"Prior distribution\"",
+          "input text field match the bounds in the table of the default priors."
+        )),
+        duration = NA,
+        type = "message"
+      )
+    }
+    # Append the custom prior:
     C_prior_rv$prior_set_obj <- prior_set_obj_add + C_prior_rv$prior_set_obj
     C_prior_rv$prior_set_obj <- unique(C_prior_rv$prior_set_obj)
   })
@@ -2276,16 +2414,19 @@ server <- function(input, output, session) {
         (sapply(C_prior_default(), function(x) {
           is.character(x) && all(x == "")
         }) &
-          !grepl("^prior$|^class$|^coef$|^group$", names(C_prior_default())))
+          !grepl("^prior$|^class$|^coef$|^group$|^lb$|^ub$", names(C_prior_default())))
     )
   })
   
   output$prior_default_view <- renderTable({
-    C_prior_default()[, !prior_colsToHide()]
+    C_prior_default()[!prior_colsToHide()]
   }, sanitize.colnames.function = san_prior_tab_nms)
   
   output$prior_set_view <- renderTable({
-    C_prior()[, !prior_colsToHide()]
+    stopifnot(identical(names(C_prior()), names(C_prior_default())))
+    # Hide columns `lb` and `ub` for now until arguments `lb` and `ub` of
+    # brms::set_prior() are supported by shinybrms:
+    C_prior()[!prior_colsToHide() & !names(C_prior()) %in% c("lb", "ub")]
   }, sanitize.colnames.function = san_prior_tab_nms)
   
   ## Posterior --------------------------------------------------------------
@@ -2394,7 +2535,7 @@ server <- function(input, output, session) {
         )
         req(FALSE)
       }
-      if (save_warmup_tmp) {
+      if (save_warmup_tmp && packageVersion("brms") <= "2.16.13") {
         showNotification(
           HTML(paste0(
             "Because of ", strong("brms", .noWS = "outside"), "'s issue #1257 ",
@@ -2420,38 +2561,32 @@ server <- function(input, output, session) {
       seed = input$advOpts_seed,
       iter = input$advOpts_iter,
       thin = input$advOpts_thin,
-      inits = input$advOpts_inits,
       save_pars = brms::save_pars(all = input$advOpts_save_all_pars),
       save_warmup = save_warmup_tmp
     )
+    if (packageVersion("brms") > "2.16.3") {
+      args_brm$init <- input$advOpts_init
+    } else {
+      args_brm$inits <- input$advOpts_init
+    }
     if (!is.na(input$advOpts_warmup)) {
-      args_brm <- c(args_brm,
-                    list(warmup = input$advOpts_warmup))
+      args_brm$warmup <- input$advOpts_warmup
     }
     if (!is.na(input$advOpts_refresh)) {
-      args_brm <- c(args_brm,
-                    list(refresh = input$advOpts_refresh))
+      args_brm$refresh <- input$advOpts_refresh
     }
     if (identical(input$advOpts_backend, "cmdstanr")) {
-      args_brm <- c(
-        args_brm,
-        list(adapt_delta = input$advOpts_adapt_delta,
-             max_treedepth = input$advOpts_max_treedepth)
-      )
-      if (!is.na(input$advOpts_init_r)) {
-        args_brm <- c(args_brm,
-                      list(init = input$advOpts_init_r))
+      args_brm$adapt_delta <- input$advOpts_adapt_delta
+      args_brm$max_treedepth <- input$advOpts_max_treedepth
+      if (identical(input$advOpts_init, "random") && !is.na(input$advOpts_init_r)) {
+        args_brm$init <- input$advOpts_init_r
       }
     } else {
-      args_brm <- c(
-        args_brm,
-        list(open_progress = input$advOpts_open_progress,
-             control = list(adapt_delta = input$advOpts_adapt_delta,
-                            max_treedepth = input$advOpts_max_treedepth))
-      )
-      if (!is.na(input$advOpts_init_r)) {
-        args_brm <- c(args_brm,
-                      list(init_r = input$advOpts_init_r))
+      args_brm$open_progress <- input$advOpts_open_progress
+      args_brm$control <- list(adapt_delta = input$advOpts_adapt_delta,
+                               max_treedepth = input$advOpts_max_treedepth)
+      if (identical(input$advOpts_init, "random") && !is.na(input$advOpts_init_r)) {
+        args_brm$init_r <- input$advOpts_init_r
       }
     }
     
@@ -2469,6 +2604,7 @@ server <- function(input, output, session) {
       # dataset has changed):
       identical(rlang::hash(da()), C_bfit_raw()$da_hash)
     if (use_upd &&
+        packageVersion("brms") <= "2.16.3" &&
         identical(C_bfit_raw()$bfit$backend, "rstan") &&
         identical(args_brm$backend, "cmdstanr")) {
       # Handle **brms** issue #1259 explicitly:
@@ -2563,7 +2699,7 @@ server <- function(input, output, session) {
         ### 
         (exists("bfit_tmp") && inherits(bfit_tmp, "try-error"))) {
       warn_capt <- capture.output({
-        bfit_tmp <- do.call(brms::brm, args = args_brm)
+        bfit_tmp <- try(do.call(brms::brm, args = args_brm), silent = TRUE)
       }, type = "message")
     }
     
@@ -2573,6 +2709,15 @@ server <- function(input, output, session) {
     if (exists("browser_orig")) options(browser = browser_orig$browser)
     if (exists("RSTUDIO_orig")) Sys.setenv("RSTUDIO" = RSTUDIO_orig)
     
+    # Notifications for the errors thrown by the call to brms::brm():
+    if (inherits(bfit_tmp, "try-error")) {
+      showNotification(
+        attr(bfit_tmp, "condition")$message,
+        duration = NA,
+        type = "error"
+      )
+      return()
+    }
     # Notifications for the warnings thrown by the call to brms::brm():
     if (length(warn_capt) > 0L) {
       warn_capt <- unique(warn_capt)
@@ -2598,11 +2743,13 @@ server <- function(input, output, session) {
       }
     }
     
-    C_bfit_raw(list(bfit = bfit_tmp,
-                    is_upload = FALSE,
-                    n_chains_spec = input$advOpts_chains,
-                    da_hash = rlang::hash(da())))
-    reset_brmsfit_upload("dummy_value")
+    if (!inherits(bfit_tmp, "try-error")) {
+      C_bfit_raw(list(bfit = bfit_tmp,
+                      is_upload = FALSE,
+                      n_chains_spec = input$advOpts_chains,
+                      da_hash = rlang::hash(da())))
+      reset_brmsfit_upload("dummy_value")
+    }
   })
   
   output$brmsfit_upload_UI <- renderUI({

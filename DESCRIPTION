@@ -1,13 +1,21 @@
 Package: shinybrms
 Title: Graphical User Interface ('shiny' App) for 'brms'
-Version: 1.6.0
-Date: 2021-11-04
+Version: 1.7.0
+Date: 2022-04-26
 Authors@R: 
     c(person(given = "Frank",
-         family = "Weber",
-         role = c("aut", "cre"),
-         email = "fweber144@protonmail.com",
-         comment = c(ORCID = "0000-0002-4842-7922")),
+             family = "Weber",
+             role = c("aut", "cre"),
+             email = "fweber144@protonmail.com",
+             comment = c(ORCID = "0000-0002-4842-7922")),
+      person(given = "Katja",
+             family = "Ickstadt",
+             role = c("ctb"),
+             comment = c(ORCID = "0000-0001-5157-2496")),
+      person(given = "Änne",
+             family = "Glass",
+             role = c("ctb"),
+             comment = c(ORCID = "0000-0002-7715-9058")),
       person(given = "Thomas",
              family = "Park",
              role = c("ctb", "cph"),
@@ -32,12 +40,14 @@ Additional_repositories: https://mc-stan.org/r-packages/
 Encoding: UTF-8
 RoxygenNote: 7.1.2
 NeedsCompilation: no
-Packaged: 2021-11-04 17:03:59 UTC; frank
+Packaged: 2022-04-26 14:55:19 UTC; frank
 Author: Frank Weber [aut, cre] (<https://orcid.org/0000-0002-4842-7922>),
+  Katja Ickstadt [ctb] (<https://orcid.org/0000-0001-5157-2496>),
+  Änne Glass [ctb] (<https://orcid.org/0000-0002-7715-9058>),
   Thomas Park [ctb, cph] ('Bootswatch' theme "United"),
   Twitter, Inc. [ctb, cph] ('Bootstrap' (basis for the 'Bootswatch' theme
     "United")),
   Google, LLC [ctb, cph] ("Open Sans" font)
 Maintainer: Frank Weber <fweber144@protonmail.com>
 Repository: CRAN
-Date/Publication: 2021-11-05 00:30:02 UTC
+Date/Publication: 2022-04-26 15:10:02 UTC
