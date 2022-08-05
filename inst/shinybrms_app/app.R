@@ -61,7 +61,7 @@ distFams_adv$"Count data outcome:" <- c(
   "Poisson with zero-inflation" = "zero_inflated_poisson",
   "Geometric" = "geometric"
 )
-distFams_adv$"Continuous outcome on the positive real line:" <- c(
+distFams_adv$"Continuous outcome on the positive (or nonnegative) real line:" <- c(
   "Log-normal" = "lognormal",
   "Log-normal with hurdle" = "hurdle_lognormal",
   "Gamma" = "Gamma",
@@ -69,8 +69,7 @@ distFams_adv$"Continuous outcome on the positive real line:" <- c(
   "Inverse Gaussian" = "inverse.gaussian",
   "Weibull" = "weibull",
   "Exponential" = "exponential",
-  "Frechet" = "frechet",
-  "Generalized extreme value" = "gen_extreme_value"
+  "Frechet" = "frechet"
 )
 distFams_adv$"Proportion as outcome:" <- c(
   "Beta" = "Beta",
@@ -302,7 +301,7 @@ ui <- navbarPage(
         ))
     ),
     # hr(),
-    icon = icon("home")
+    icon = icon("house")
   ),
   
   ## Data -------------------------------------------------------------------
@@ -477,33 +476,33 @@ ui <- navbarPage(
           helpText(
             "Notes:",
             tags$ul(
-              tags$li("Pooled effects are also known as",
-                      em("population-level"), "or", em("fixed"), "effects."),
-              tags$li("Partially pooled effects are also known as",
-                      em("group-level"), "or", em("random"), "effects."),
+              tags$li("Population-level effects are also known as",
+                      em("fixed"), "effects."),
+              tags$li("Group-level effects are also known as",
+                      em("random"), "or", em("partially pooled"), "effects."),
             )
           ),
-          h4("Pooled main effects"), # Abbreviated in the code by "CP" (for "completely pooled").
+          h4("Population-level main effects"),
           helpText(
             "Start typing or click into the field below to choose variables for which",
-            "pooled main effects shall be added."
+            "population-level main effects shall be added."
           ),
-          selectInput("pred_mainCP_sel", NULL,
-                      choices = c("Choose variables for pooled main effects ..." = ""),
+          selectInput("pred_mainPL_sel", NULL,
+                      choices = c("Choose variables for population-level main effects ..." = ""),
                       multiple = TRUE,
                       selectize = TRUE),
-          h4("Partially pooled main effects"),
+          h4("Group-level main effects"),
           helpText(
             "Start typing or click into the field below to choose variables for which",
-            "partially pooled main effects shall be added.",
-            "Note that you may not specify partially pooled main effects for a numeric variable.",
-            "This is not allowed to point out that a variable must be treated as nominal to have",
-            "partially pooled main effects.",
-            "If you really want partially pooled main effects for a numeric variable, you",
+            "group-level main effects shall be added.",
+            "Note that you may not specify group-level main effects for a numeric variable.",
+            "This is not allowed to point out that a variable must be treated as categorical to have",
+            "group-level main effects.",
+            "If you really want group-level main effects for a numeric variable, you",
             "have to convert this variable in your dataset to a character variable."
           ),
-          selectInput("pred_mainPP_sel", NULL,
-                      choices = c("Choose variables for partially pooled main effects ..." = ""),
+          selectInput("pred_mainGL_sel", NULL,
+                      choices = c("Choose variables for group-level main effects ..." = ""),
                       multiple = TRUE,
                       selectize = TRUE)
         ),
@@ -511,9 +510,9 @@ ui <- navbarPage(
           h3("Interaction effects"),
           helpText(
             p("Here, the term \"interaction\" not only denotes interactions involving only",
-              "predictor variables with pooled effects (yielding an interaction with pooled effects),",
-              "but also interactions involving predictor variables with partially pooled effects (yielding",
-              "an interaction with partially pooled effects).",
+              "predictor variables with population-level effects (yielding an interaction with population-level effects),",
+              "but also interactions involving predictor variables with group-level effects (yielding",
+              "an interaction with group-level effects).",
               "This broad definition of \"interaction\" is indicated here by the symbol \"<-->\"."),
             p("Only variables already having a main effect may be included in an interaction",
               "term. In the rare case that you really need an interaction involving a variable",
@@ -607,9 +606,9 @@ ui <- navbarPage(
                   tags$li(code("Intercept"), ": the intercept when centering the predictors.",
                           "This is only the internally used intercept; in the output, the intercept with",
                           "respect to the noncentered predictors is given (named", code("b_Intercept", .noWS = "after"), ")."),
-                  tags$li(code("b"), ": pooled effects (or pooled regression coefficients)."),
-                  tags$li(code("sd"), ": standard deviations of partially pooled effects."),
-                  tags$li(code("cor"), ": correlations between partially pooled effects of the same group."),
+                  tags$li(code("b"), ": population-level effects (or population-level regression coefficients)."),
+                  tags$li(code("sd"), ": standard deviations of group-level effects."),
+                  tags$li(code("cor"), ": correlations between group-level effects of the same group."),
                   tags$li("All other parameter classes are specific to the chosen",
                           "distributional family for the outcome (see page",
                           HTML(paste(actionLink("outcome_link1", HTML("Likelihood &rarr; Outcome"))), .noWS = "after"),
@@ -645,8 +644,6 @@ ui <- navbarPage(
     br(),
     strong("Default priors for the parameters belonging to the current likelihood:"),
     tableOutput("prior_default_view"),
-    helpText("An empty field in column \"Prior\" denotes a flat prior over the support of the",
-             "corresponding parameter."),
     hr(),
     h3("Custom priors"),
     br(),
@@ -673,7 +670,7 @@ ui <- navbarPage(
                     selectize = TRUE),
         selectInput("prior_group_sel",
                     HTML(paste0(
-                      "Group (for partially pooled effects):",
+                      "Group (for group-level effects):",
                       helpText("Note: Leave empty while having an empty \"Coefficient\" field to",
                                "use all groups belonging to the selected class.",
                                style = "font-weight:normal")
@@ -848,7 +845,7 @@ ui <- navbarPage(
                       target = "_blank", .noWS = "after"),
                     ", together with the",
                     a("\"CmdStan User's Guide\"",
-                      href = "https://mc-stan.org/docs/2_29/cmdstan-guide/index.html",
+                      href = "https://mc-stan.org/docs/cmdstan-guide/index.html",
                       target = "_blank", .noWS = "after"),
                     "."
                   )
@@ -1050,7 +1047,7 @@ ui <- navbarPage(
             "In general, the first two of these diagnostics are worrying if they are greater than",
             "zero (i.e. at least one iteration ending with a divergence or at least one iteration",
             "hitting the maximum tree depth) and the third diagnostic (E-BFMI) is worrying if it is",
-            "smaller than 0.2 for at least one chain."),
+            "smaller than 0.3 for at least one chain."),
           p("The general MCMC diagnostics (computed for each parameter",
             "as well as for the accumulated log-posterior density) are:",
             tags$ul(
@@ -1210,23 +1207,23 @@ ui <- navbarPage(
           p("As its name suggests, a conditional-effects plot", em("conditions"), "on specific values of",
             "those predictor variables which are not involved in the plot:",
             "It conditions on the mean of continuous predictor variables and",
-            "on the reference category of those categorical predictor variables which have pooled main effects.",
-            "Partially pooled effects are set to zero, with the following exceptions:",
+            "on the reference category of those categorical predictor variables which have population-level main effects.",
+            "Group-level effects are set to zero, with the following exceptions:",
             tags$ul(
               tags$li(
-                "Those partially pooled effects which are plotted are not set to zero (otherwise,",
+                "Those group-level effects which are plotted are not set to zero (otherwise,",
                 "there would not be anything meaningful to plot)."
               ),
               tags$li(
-                "If partially pooled slopes are plotted, the corresponding partially pooled intercepts",
-                "are also not set to zero (for consistency with pooled interaction effects)."
-                # More precisely: "for consistency with pooled interaction
+                "If group-level slopes are plotted, the corresponding group-level intercepts",
+                "are also not set to zero (for consistency with population-level interaction effects)."
+                # More precisely: "for consistency with population-level interaction
                 # effects (and this also avoids problems with dummy-coded
-                # partially pooled slopes)"
+                # group-level slopes)"
               ) 
             )),
           p("Be cautious with predictor variables having a high number of levels (which is usually",
-            "only the case for partially pooled effects): In that case, the computation may",
+            "only the case for group-level effects): In that case, the computation may",
             "take a long time and the resulting plot is rarely useful.")
         ),
         # br(),
@@ -1274,15 +1271,15 @@ ui <- navbarPage(
                 "summarized as follows:",
                 tags$ul(
                   tags$li(code("b_Intercept"), "is the intercept (with respect to the noncentered predictors)."),
-                  tags$li("The parameters starting with", code("b_"), "are the pooled effects."),
+                  tags$li("The parameters starting with", code("b_"), "are the population-level effects."),
                   tags$li("If you used a", code("constant()"), "prior (which should rarely be the case), then",
                           "the parameters starting with", code("par_"), "are internal parameters which you don't",
                           "need to take into account."),
-                  tags$li("The parameters starting with", code("r_"), "are the partially pooled effects."),
+                  tags$li("The parameters starting with", code("r_"), "are the group-level effects."),
                   tags$li("The parameters starting with", code("sd_"), "are the standard deviations of the",
-                          "partially pooled effects."),
+                          "group-level effects."),
                   tags$li("The parameters starting with", code("cor_"), "are the correlations between the",
-                          "partially pooled effects of the same group."),
+                          "group-level effects of the same group."),
                   tags$li(code("log-posterior"), "is the accumulated log-posterior density (up to an additive constant)."),
                   tags$li("All other parameters are parameters specific to the chosen",
                           "distributional family for the outcome (see page",
@@ -1355,14 +1352,14 @@ ui <- navbarPage(
                   "Twitter, Inc. (for Bootstrap, the basis for the Bootswatch theme \"United\");",
                   "Google, LLC (for the \"Open Sans\" font)"),
           tags$li(strong("Version:"),
-                  "1.7.0"),
+                  "1.8.0"),
           tags$li(strong("Date:"),
-                  "April 26, 2022"),
+                  "July 30, 2022"),
           tags$li(strong("Citation:"),
                   "Frank Weber (2022).",
                   em("shinybrms: Graphical User Interface ('shiny' App)",
                      "for 'brms'."),
-                  "R package, version 1.7.0. URL:",
+                  "R package, version 1.8.0. URL:",
                   a("https://fweber144.github.io/shinybrms/",
                     href = "https://fweber144.github.io/shinybrms/",
                     target = "_blank",
@@ -1812,8 +1809,8 @@ server <- function(input, output, session) {
     if (!inherits(try(da(), silent = TRUE), "try-error")) {
       outc_choices <- c(outc_choices,
                         setdiff(names(da()),
-                                c(input$pred_mainCP_sel,
-                                  input$pred_mainPP_sel,
+                                c(input$pred_mainPL_sel,
+                                  input$pred_mainGL_sel,
                                   input$offs_sel)))
       outc_slctd <- isolate(input$outc_sel)
     } else {
@@ -1872,44 +1869,44 @@ server <- function(input, output, session) {
   #### Main effects ---------------------------------------------------------
   
   observe({
-    pred_mainCP_choices <- c("Choose variables for pooled main effects ..." = "")
+    pred_mainPL_choices <- c("Choose variables for population-level main effects ..." = "")
     if (!inherits(try(da(), silent = TRUE), "try-error")) {
-      pred_mainCP_choices <- c(pred_mainCP_choices,
+      pred_mainPL_choices <- c(pred_mainPL_choices,
                                setdiff(names(da()),
                                        c(input$outc_sel,
-                                         input$pred_mainPP_sel,
+                                         input$pred_mainGL_sel,
                                          input$offs_sel)))
-      pred_mainCP_slctd <- isolate(input$pred_mainCP_sel)
+      pred_mainPL_slctd <- isolate(input$pred_mainPL_sel)
     } else {
-      pred_mainCP_slctd <- NULL
+      pred_mainPL_slctd <- NULL
     }
-    updateSelectInput(session, "pred_mainCP_sel",
-                      choices = pred_mainCP_choices,
-                      selected = pred_mainCP_slctd)
+    updateSelectInput(session, "pred_mainPL_sel",
+                      choices = pred_mainPL_choices,
+                      selected = pred_mainPL_slctd)
   })
   
   observe({
-    pred_mainPP_choices <- c("Choose variables for partially pooled main effects ..." = "")
+    pred_mainGL_choices <- c("Choose variables for group-level main effects ..." = "")
     if (!inherits(try(da(), silent = TRUE), "try-error")) {
-      PP_sel_choices <- setdiff(names(da()),
+      GL_sel_choices <- setdiff(names(da()),
                                 c(input$outc_sel,
-                                  input$pred_mainCP_sel,
+                                  input$pred_mainPL_sel,
                                   input$offs_sel))
-      if (length(PP_sel_choices) > 0L) {
+      if (length(GL_sel_choices) > 0L) {
         # Only allow factor, character, and logical variables:
-        PP_sel_choices_OK <- sapply(da()[PP_sel_choices], function(x) {
+        GL_sel_choices_OK <- sapply(da()[GL_sel_choices], function(x) {
           is.character(x) || is.factor(x) || is.logical(x)
         })
-        PP_sel_choices <- PP_sel_choices[PP_sel_choices_OK]
+        GL_sel_choices <- GL_sel_choices[GL_sel_choices_OK]
       }
-      pred_mainPP_choices <- c(pred_mainPP_choices, PP_sel_choices)
-      pred_mainPP_slctd <- isolate(input$pred_mainPP_sel)
+      pred_mainGL_choices <- c(pred_mainGL_choices, GL_sel_choices)
+      pred_mainGL_slctd <- isolate(input$pred_mainGL_sel)
     } else {
-      pred_mainPP_slctd <- NULL
+      pred_mainGL_slctd <- NULL
     }
-    updateSelectInput(session, "pred_mainPP_sel",
-                      choices = pred_mainPP_choices,
-                      selected = pred_mainPP_slctd)
+    updateSelectInput(session, "pred_mainGL_sel",
+                      choices = pred_mainGL_choices,
+                      selected = pred_mainGL_slctd)
   })
   
   #### Interactions ---------------------------------------------------------
@@ -1918,8 +1915,8 @@ server <- function(input, output, session) {
     pred_intBuild_choices <- c("Choose variables for an interaction term ..." = "")
     if (!inherits(try(da(), silent = TRUE), "try-error")) {
       pred_intBuild_choices <- c(pred_intBuild_choices,
-                                 input$pred_mainCP_sel,
-                                 input$pred_mainPP_sel)
+                                 input$pred_mainPL_sel,
+                                 input$pred_mainGL_sel)
       pred_int_slctd <- isolate(input$pred_int_build)
     } else {
       pred_int_slctd <- NULL
@@ -1942,29 +1939,29 @@ server <- function(input, output, session) {
                                      paste(input$pred_int_build, collapse = "<-->")))
       updateSelectInput(session, "pred_int_build",
                         choices = c("Choose variables for an interaction term ..." = "",
-                                    input$pred_mainCP_sel,
-                                    input$pred_mainPP_sel))
+                                    input$pred_mainPL_sel,
+                                    input$pred_mainGL_sel))
     }
   })
   
   # Ensure that all variables involved in the interaction terms have a main effect (either
-  # pooled or partially pooled):
+  # population-level or group-level):
   observeEvent({
-    input$pred_mainCP_sel
-    input$pred_mainPP_sel
+    input$pred_mainPL_sel
+    input$pred_mainGL_sel
   }, {
     pred_intSel_slctd <- pred_int_rv$choices[pred_int_rv$choices_chr %in% input$pred_int_sel]
     pred_int_rv$choices <- lapply(pred_int_rv$choices, function(x) {
-      intersect(x, c(input$pred_mainCP_sel,
-                     input$pred_mainPP_sel))
+      intersect(x, c(input$pred_mainPL_sel,
+                     input$pred_mainGL_sel))
     })
     pred_int_rv$choices <- pred_int_rv$choices[sapply(pred_int_rv$choices, length) > 1L]
     if (length(pred_int_rv$choices) > 0L) {
       pred_int_rv$choices_chr <- sapply(pred_int_rv$choices, paste, collapse = "<-->")
       pred_intSel_choices <- pred_int_rv$choices_chr
       pred_intSel_slctd <- lapply(pred_intSel_slctd, function(x) {
-        intersect(x, c(input$pred_mainCP_sel,
-                       input$pred_mainPP_sel))
+        intersect(x, c(input$pred_mainPL_sel,
+                       input$pred_mainGL_sel))
       })
       pred_intSel_slctd <- pred_intSel_slctd[sapply(pred_intSel_slctd, length) > 1L]
       if (length(pred_intSel_slctd) > 0L) {
@@ -1991,8 +1988,8 @@ server <- function(input, output, session) {
       offs_choices <- c(offs_choices,
                         setdiff(names(da()),
                                 c(input$outc_sel,
-                                  input$pred_mainCP_sel,
-                                  input$pred_mainPP_sel)))
+                                  input$pred_mainPL_sel,
+                                  input$pred_mainGL_sel)))
       offs_slctd <- isolate(input$offs_sel)
     } else {
       offs_slctd <- NULL
@@ -2005,43 +2002,43 @@ server <- function(input, output, session) {
   #### Combination of all chosen predictor terms ----------------------------
   
   C_pred <- reactive({
-    if (is.null(input$pred_mainCP_sel) && is.null(input$pred_mainPP_sel)) {
-      mainCP_tmp <- "1"
+    if (is.null(input$pred_mainPL_sel) && is.null(input$pred_mainGL_sel)) {
+      mainPL_tmp <- "1"
       if (length(input$offs_sel) > 0L) {
-        mainCP_tmp <- c(mainCP_tmp, paste0("offset(", input$offs_sel, ")"))
+        mainPL_tmp <- c(mainPL_tmp, paste0("offset(", input$offs_sel, ")"))
       }
-      return(data.frame("from_mainPP" = factor(NA_character_, levels = NA_character_, exclude = NULL),
-                        "from_mainCP" = paste(mainCP_tmp, collapse = " + ")))
+      return(data.frame("from_mainGL" = factor(NA_character_, levels = NA_character_, exclude = NULL),
+                        "from_mainPL" = paste(mainPL_tmp, collapse = " + ")))
     }
     
     pred_lst <- c(
-      as.list(input$pred_mainCP_sel),
-      as.list(input$pred_mainPP_sel),
+      as.list(input$pred_mainPL_sel),
+      as.list(input$pred_mainGL_sel),
       pred_int_rv$choices[pred_int_rv$choices_chr %in% input$pred_int_sel]
     )
     if (length(input$pred_int_sel) > 0L) {
       # Perform the following tasks (at the same time):
       #   - Expand interactions on the group-level side (in principle, this is not necessary as the
       #     "*" syntax (<predictor_1>*<predictor_2>) also works on the group-level side; however, for
-      #     including correlations between the partially pooled effects of a specific group-level term, the
+      #     including correlations between the group-level effects of a specific group-level term, the
       #     terms on the population-level side need to be grouped by the term on the group-level side).
-      #   - For partially pooled slopes, add the corresponding pooled slopes since the partially pooled
+      #   - For group-level slopes, add the corresponding population-level slopes since the group-level
       #     slopes are assumed to have mean zero.
-      # The first task is performed by applying combn() to m = 1L, ..., length(xPP) with "xPP"
+      # The first task is performed by applying combn() to m = 1L, ..., length(xGL) with "xGL"
       # containing the group-level terms of a given element of "pred_lst".
       # The second task is performed by additionally applying combn() to m = 0L when performing
       # the first task.
       pred_needsExpand <- sapply(pred_lst, function(x) {
-        sum(x %in% input$pred_mainPP_sel) > 0L
+        sum(x %in% input$pred_mainGL_sel) > 0L
       })
       if (any(pred_needsExpand)) { # This if () condition is not necessary, but included for better readability.
         pred_lst_toExpand <- pred_lst[pred_needsExpand]
         pred_lst_expanded <- do.call("c", lapply(pred_lst_toExpand, function(x) {
-          xPP <- intersect(x, input$pred_mainPP_sel)
-          xPP_lst_expanded <- unlist(lapply(c(0L, seq_along(xPP)), combn, x = xPP, simplify = FALSE),
+          xGL <- intersect(x, input$pred_mainGL_sel)
+          xGL_lst_expanded <- unlist(lapply(c(0L, seq_along(xGL)), combn, x = xGL, simplify = FALSE),
                                      recursive = FALSE)
-          xCP <- intersect(x, input$pred_mainCP_sel)
-          lapply(xPP_lst_expanded, "c", xCP)
+          xPL <- intersect(x, input$pred_mainPL_sel)
+          lapply(xGL_lst_expanded, "c", xPL)
         }))
         pred_lst <- c(pred_lst[!pred_needsExpand],
                       pred_lst_expanded)
@@ -2053,54 +2050,54 @@ server <- function(input, output, session) {
       # By group-level term: Check each population-level term for being a "subterm" (lower-order
       # term) of a high-order term and if yes, remove it:
       pred_vec_chr <- sapply(pred_lst, function(x) {
-        xPP <- intersect(x, input$pred_mainPP_sel)
-        if (length(xPP) > 0L) {
-          return(paste(xPP, collapse = "<-->"))
+        xGL <- intersect(x, input$pred_mainGL_sel)
+        if (length(xGL) > 0L) {
+          return(paste(xGL, collapse = "<-->"))
         } else {
           return(NA_character_)
         }
       })
       pred_vec_chr <- factor(pred_vec_chr, levels = unique(pred_vec_chr), exclude = NULL)
       pred_lst <- tapply(pred_lst, pred_vec_chr, function(x_lst) {
-        xCP_lst <- lapply(x_lst, intersect, y = input$pred_mainCP_sel)
-        x_isSubCP <- sapply(seq_along(xCP_lst), function(idx) {
-          any(sapply(xCP_lst[-idx], function(xCP) {
-            all(xCP_lst[[idx]] %in% xCP)
+        xPL_lst <- lapply(x_lst, intersect, y = input$pred_mainPL_sel)
+        x_isSubPL <- sapply(seq_along(xPL_lst), function(idx) {
+          any(sapply(xPL_lst[-idx], function(xPL) {
+            all(xPL_lst[[idx]] %in% xPL)
           }))
         })
-        return(x_lst[!x_isSubCP])
+        return(x_lst[!x_isSubPL])
       }, simplify = FALSE)
       pred_lst <- unlist(pred_lst, recursive = FALSE, use.names = FALSE)
     }
     pred_lst <- c(pred_lst, as.list(input$offs_sel))
     
     pred_DF <- do.call("rbind", lapply(pred_lst, function(x) {
-      xCP <- intersect(x, input$pred_mainCP_sel)
-      if (length(xCP) > 0L) {
-        xCP <- paste(xCP, collapse = "*")
+      xPL <- intersect(x, input$pred_mainPL_sel)
+      if (length(xPL) > 0L) {
+        xPL <- paste(xPL, collapse = "*")
       } else {
-        xCP <- NA_character_
+        xPL <- NA_character_
       }
-      xPP <- intersect(x, input$pred_mainPP_sel)
-      if (length(xPP) > 0L) {
-        xPP <- paste(xPP, collapse = ":")
+      xGL <- intersect(x, input$pred_mainGL_sel)
+      if (length(xGL) > 0L) {
+        xGL <- paste(xGL, collapse = ":")
       } else {
-        xPP <- NA_character_
+        xGL <- NA_character_
       }
       xOffs <- intersect(x, input$offs_sel)
       if (identical(length(xOffs), 1L)) {
-        if (!isTRUE(is.na(xCP))) {
-          stop("Unexpected value of `xCP`. Please report this.")
+        if (!isTRUE(is.na(xPL))) {
+          stop("Unexpected value of `xPL`. Please report this.")
         }
-        xCP <- paste0("offset(", xOffs, ")")
+        xPL <- paste0("offset(", xOffs, ")")
       } else if (!identical(length(xOffs), 0L)) {
         stop("Unexpected length of `xOffs`. Please report this.")
       }
-      data.frame("from_mainCP" = xCP,
-                 "from_mainPP" = xPP)
+      data.frame("from_mainPL" = xPL,
+                 "from_mainGL" = xGL)
     }))
-    pred_DF$from_mainPP <- factor(pred_DF$from_mainPP, levels = unique(pred_DF$from_mainPP), exclude = NULL)
-    pred_DF <- aggregate(from_mainCP ~ from_mainPP, pred_DF, function(x) {
+    pred_DF$from_mainGL <- factor(pred_DF$from_mainGL, levels = unique(pred_DF$from_mainGL), exclude = NULL)
+    pred_DF <- aggregate(from_mainPL ~ from_mainGL, pred_DF, function(x) {
       paste(c("1", x[!is.na(x)]), collapse = " + ")
     }, na.action = na.pass)
     return(pred_DF)
@@ -2111,8 +2108,8 @@ server <- function(input, output, session) {
   output$pred_view <- renderTable({
     C_pred()
   }, sanitize.colnames.function = function(x) {
-    x <- sub("^from_mainCP$", "Effect(s)", x)
-    x <- sub("^from_mainPP$", "Group", x)
+    x <- sub("^from_mainPL$", "Effect(s)", x)
+    x <- sub("^from_mainGL$", "Group", x)
     return(x)
   })
   
@@ -2122,10 +2119,10 @@ server <- function(input, output, session) {
     req(input$outc_sel)
     
     formula_splitted <- apply(C_pred(), 1, function(x) {
-      if (is.na(x["from_mainPP"])) {
-        return(x["from_mainCP"])
+      if (is.na(x["from_mainGL"])) {
+        return(x["from_mainPL"])
       } else {
-        return(paste0("(", x["from_mainCP"], " | ", x["from_mainPP"], ")"))
+        return(paste0("(", x["from_mainPL"], " | ", x["from_mainGL"], ")"))
       }
     })
     return(paste(
@@ -2156,8 +2153,8 @@ server <- function(input, output, session) {
        inherits(try(C_family(), silent = TRUE), "try-error") ||
        inherits(try(req(all(c(
          setdiff(input$outc_sel, ""),
-         input$pred_mainCP_sel,
-         input$pred_mainPP_sel,
+         input$pred_mainPL_sel,
+         input$pred_mainGL_sel,
          input$offs_sel
        ) %in% names(da()))), silent = TRUE), "try-error")){
       return(brms::empty_prior())
@@ -2419,7 +2416,7 @@ server <- function(input, output, session) {
   })
   
   output$prior_default_view <- renderTable({
-    C_prior_default()[!prior_colsToHide()]
+    brms:::prepare_print_prior(C_prior_default())[!prior_colsToHide()]
   }, sanitize.colnames.function = san_prior_tab_nms)
   
   output$prior_set_view <- renderTable({
@@ -2682,12 +2679,14 @@ server <- function(input, output, session) {
     # Run Stan (more precisely: brms::brm() (or brms:::update.brmsfit(), if possible)):
     if (use_upd) {
       # Note: The try() call was added for the case where a `brmsfit` is updated
-      # by *extending* the predictors. However, it also handles **brms** issue #1259
-      # implicitly.
+      # by adding the predictors on the right-hand side of the formula (which
+      # should not lead to an error anymore now that argument `newdata` is set).
+      # However, it also handles **brms** issue #1259 implicitly.
       warn_capt <- capture.output({
         bfit_tmp <- try(do.call(update, args = c(
           list(object = C_bfit_raw()$bfit,
-               formula. = C_formula()),
+               formula. = args_brm$formula,
+               newdata = args_brm$data),
           args_brm[setdiff(names(args_brm), c("formula", "data"))]
         )), silent = TRUE)
       }, type = "message")
@@ -2804,7 +2803,7 @@ server <- function(input, output, session) {
     
     C_EBFMI <- setNames(rstan::get_bfmi(C_sfit),
                         paste0("chain_", sapply(C_sfit@stan_args, "[[", "chain_id")))
-    C_EBFMI_OK <- all(C_EBFMI >= 0.2)
+    C_EBFMI_OK <- all(C_EBFMI >= 0.3)
     
     ###### General MCMC diagnostics -------------------------------------------
     
@@ -3272,7 +3271,7 @@ server <- function(input, output, session) {
   
   # A reactive object which will contain the labels of the group terms
   # (excluding those with at least two colons):
-  termlabs_PP_grp <- reactiveVal()
+  termlabs_GL_grp <- reactiveVal()
   
   observe({
     term_choices <- c("Choose predictor term ..." = "")
@@ -3281,55 +3280,55 @@ server <- function(input, output, session) {
       
       termlabs <- labels(terms(formula(C_bformula_ff())))
       
-      #### Pooled effects -------------------------------------------------------
+      #### Population-level effects ---------------------------------------------
       
-      termlabs_CP <- grep("\\|", termlabs, value = TRUE, invert = TRUE)
-      termlabs_CP_main <- grep(":", termlabs_CP, value = TRUE, invert = TRUE)
-      termlabs_CP_IA <- setdiff(termlabs_CP, termlabs_CP_main)
-      termlabs_CP_IA2 <- grep(":.*:", termlabs_CP_IA, value = TRUE, invert = TRUE)
+      termlabs_PL <- grep("\\|", termlabs, value = TRUE, invert = TRUE)
+      termlabs_PL_main <- grep(":", termlabs_PL, value = TRUE, invert = TRUE)
+      termlabs_PL_IA <- setdiff(termlabs_PL, termlabs_PL_main)
+      termlabs_PL_IA2 <- grep(":.*:", termlabs_PL_IA, value = TRUE, invert = TRUE)
       ### NOTE: unlist() is only needed for the special case
-      ### `identical(length(termlabs_CP_IA2), 0L)`:
-      termlabs_CP_IA2_rev <- unlist(sapply(strsplit(termlabs_CP_IA2, split = ":"), function(termlabs_CP_IA2_i) {
-        return(paste(rev(termlabs_CP_IA2_i), collapse = ":"))
+      ### `identical(length(termlabs_PL_IA2), 0L)`:
+      termlabs_PL_IA2_rev <- unlist(sapply(strsplit(termlabs_PL_IA2, split = ":"), function(termlabs_PL_IA2_i) {
+        return(paste(rev(termlabs_PL_IA2_i), collapse = ":"))
       }))
       ### 
       
-      #### Partially pooled effects ---------------------------------------------
+      #### Group-level effects --------------------------------------------------
       
-      termlabs_PP <- setdiff(termlabs, termlabs_CP)
-      termlabs_PP_split <- strsplit(termlabs_PP, "[[:blank:]]*\\|[[:blank:]]*")
-      stopifnot(all(lengths(termlabs_PP_split) == 2L))
-      termlabs_PP_grp_tmp <- sapply(termlabs_PP_split, "[[", 2)
-      termlabs_PP_grp_tmp <- grep(":.*:", termlabs_PP_grp_tmp, value = TRUE, invert = TRUE)
-      termlabs_PP_grp(termlabs_PP_grp_tmp)
-      termlabs_PP_IA <- unlist(lapply(termlabs_PP_split, function(termlabs_PP_i) {
-        retermlabs_PP_i <- labels(terms(as.formula(paste("~", termlabs_PP_i[1]))))
+      termlabs_GL <- setdiff(termlabs, termlabs_PL)
+      termlabs_GL_split <- strsplit(termlabs_GL, "[[:blank:]]*\\|[[:blank:]]*")
+      stopifnot(all(lengths(termlabs_GL_split) == 2L))
+      termlabs_GL_grp_tmp <- sapply(termlabs_GL_split, "[[", 2)
+      termlabs_GL_grp_tmp <- grep(":.*:", termlabs_GL_grp_tmp, value = TRUE, invert = TRUE)
+      termlabs_GL_grp(termlabs_GL_grp_tmp)
+      termlabs_GL_IA <- unlist(lapply(termlabs_GL_split, function(termlabs_GL_i) {
+        retermlabs_GL_i <- labels(terms(as.formula(paste("~", termlabs_GL_i[1]))))
         ### May only be used when depending on R >= 4.0.1 (which should probably
         ### be avoided since R 4.0.0 introduced a lot of big changes):
-        # return(paste0(retermlabs_PP_i, ":", termlabs_PP_i[2], recycle0 = TRUE))
+        # return(paste0(retermlabs_GL_i, ":", termlabs_GL_i[2], recycle0 = TRUE))
         ### 
         ### When not depending on R >= 4.0.1:
-        if (identical(length(retermlabs_PP_i), 0L)) {
+        if (identical(length(retermlabs_GL_i), 0L)) {
           return(character())
         }
-        return(paste0(retermlabs_PP_i, ":", termlabs_PP_i[2]))
+        return(paste0(retermlabs_GL_i, ":", termlabs_GL_i[2]))
         ### 
       }))
-      termlabs_PP_IA2 <- grep(":.*:", termlabs_PP_IA, value = TRUE, invert = TRUE)
+      termlabs_GL_IA2 <- grep(":.*:", termlabs_GL_IA, value = TRUE, invert = TRUE)
       ### NOTE: unlist() is only needed for the special case
-      ### `identical(length(termlabs_PP_IA2), 0L)`:
-      termlabs_PP_IA2_rev <- unlist(sapply(strsplit(termlabs_PP_IA2, split = ":"), function(termlabs_PP_IA2_i) {
-        return(paste(rev(termlabs_PP_IA2_i), collapse = ":"))
+      ### `identical(length(termlabs_GL_IA2), 0L)`:
+      termlabs_GL_IA2_rev <- unlist(sapply(strsplit(termlabs_GL_IA2, split = ":"), function(termlabs_GL_IA2_i) {
+        return(paste(rev(termlabs_GL_IA2_i), collapse = ":"))
       }))
       ### 
       
       #### Update choices for input$term_sel ------------------------------------
       
       term_choices <- c(term_choices,
-                        termlabs_CP_main, termlabs_CP_IA2, termlabs_CP_IA2_rev,
-                        termlabs_PP_grp_tmp, termlabs_PP_IA2, termlabs_PP_IA2_rev)
+                        termlabs_PL_main, termlabs_PL_IA2, termlabs_PL_IA2_rev,
+                        termlabs_GL_grp_tmp, termlabs_GL_IA2, termlabs_GL_IA2_rev)
     } else {
-      termlabs_PP_grp(NULL)
+      termlabs_GL_grp(NULL)
     }
     updateSelectInput(session, "term_sel",
                       choices = term_choices)
@@ -3338,19 +3337,19 @@ server <- function(input, output, session) {
   gg_ceff <- reactive({
     req(input$term_sel, C_stanres())
     re_formula_ceff <- NA
-    term_sel_PP <- intersect(input$term_sel, termlabs_PP_grp())
-    if (identical(length(term_sel_PP), 1L)) {
-      re_formula_ceff <- as.formula(paste("~ (1 |", term_sel_PP, ")"))
-    } else if (identical(length(term_sel_PP), 0L) && grepl(":", input$term_sel)) {
+    term_sel_GL <- intersect(input$term_sel, termlabs_GL_grp())
+    if (identical(length(term_sel_GL), 1L)) {
+      re_formula_ceff <- as.formula(paste("~ (1 |", term_sel_GL, ")"))
+    } else if (identical(length(term_sel_GL), 0L) && grepl(":", input$term_sel)) {
       term_sel_split <- strsplit(input$term_sel, split = ":")[[1]]
       stopifnot(length(term_sel_split) <= 2L)
-      term_sel_split_PP <- intersect(term_sel_split, termlabs_PP_grp())
-      stopifnot(length(term_sel_split_PP) <= 1L)
-      if (identical(length(term_sel_split_PP), 1L)) {
-        term_sel_split_CP <- setdiff(term_sel_split, term_sel_split_PP)
-        stopifnot(identical(length(term_sel_split_CP), 1L))
+      term_sel_split_GL <- intersect(term_sel_split, termlabs_GL_grp())
+      stopifnot(length(term_sel_split_GL) <= 1L)
+      if (identical(length(term_sel_split_GL), 1L)) {
+        term_sel_split_PL <- setdiff(term_sel_split, term_sel_split_GL)
+        stopifnot(identical(length(term_sel_split_PL), 1L))
         re_formula_ceff <- as.formula(paste(
-          "~ (1 +", term_sel_split_CP, "|", term_sel_split_PP, ")"
+          "~ (1 +", term_sel_split_PL, "|", term_sel_split_GL, ")"
         ))
       }
     }
@@ -3358,8 +3357,8 @@ server <- function(input, output, session) {
     ### argument 're_formula' of brms::conditional_effects() here only contains
     ### the group term which is involved in argument 'effects' (since argument
     ### 're_formula' of brms::conditional_effects() is set to only those
-    ### partially pooled effects which are plotted (or also the corresponding
-    ### partially pooled intercepts, if partially pooled slopes are plotted))):
+    ### group-level effects which are plotted (or also the corresponding
+    ### group-level intercepts, if group-level slopes are plotted))):
     # set.seed(<seed>)
     ### 
     C_ceff <- brms::conditional_effects(
@@ -3370,8 +3369,8 @@ server <- function(input, output, session) {
       ### argument 're_formula' of brms::conditional_effects() here only
       ### contains the group term which is involved in argument 'effects' (since
       ### argument 're_formula' of brms::conditional_effects() is set to only
-      ### those partially pooled effects which are plotted (or also the
-      ### corresponding partially pooled intercepts, if partially pooled slopes
+      ### those group-level effects which are plotted (or also the
+      ### corresponding group-level intercepts, if group-level slopes
       ### are plotted))):
       # sample_new_levels = "gaussian"
       ### 

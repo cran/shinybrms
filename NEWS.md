@@ -1,3 +1,44 @@
+# **shinybrms** 1.8.0
+
+## Major changes
+
+* The threshold for worrying E-BFMI values was increased from 0.2 to 0.3 (to
+comply with Betancourt, 2018,
+[arXiv:1701.02434v2](https://arxiv.org/abs/1701.02434v2)).
+* The term "pooled" (effects) is replaced by "population-level" (effects).
+Correspondingly, the term "partially pooled" (effects) is replaced by
+"group-level" (effects). In v1.6.0, the term "pooled" was introduced as an
+improvement for continuous predictors (which cannot have partially pooled or
+group-level effects), but this now turned out to be incorrect for those
+categorical predictors which do not have partially pooled effects. The
+"population-level"/"group-level" terminology is used in **brms**, so it makes
+sense already in terms of consistency to use it in **shinybrms**, too.
+
+## Minor changes
+
+* In the table showing the default priors, column "Prior" should not have any
+empty fields anymore. The reason for this change is that empty fields arising
+from a flat prior could have been confounded too easily with empty fields
+arising from the vectorization ("inheritance") of the prior within a given
+parameter class. This was especially problematic because the former help text
+underneath the table was worded mistakably.
+* A recompilation of the C++ code is now avoided more often. More specifically,
+affected cases are those where `brms:::update.brmsfit()` is used with a formula
+that was extended on its right-hand side. In those cases, **shinybrms** now
+avoids a recompilation by specifying argument `newdata` of
+`brms:::update.brmsfit()`.
+* The `brms::gen_extreme_value()` family has been removed from the drop-down
+list of advanced distributional families, due to **brms**'s issue
+[paul-buerkner/brms#1345](https://github.com/paul-buerkner/brms/issues/1345).
+(Note that before, the `brms::gen_extreme_value()` family was misclassified
+under "Continuous outcome on the positive real line": In fact, the support of
+this family depends on its shape parameter.)
+
+## Bug fixes
+
+* Avoid a warning about a deprecated icon called `"home"` when launching the
+app. This required increasing the required **shiny** version to 1.7.0.
+
 # **shinybrms** 1.7.0
 
 ## Major changes
